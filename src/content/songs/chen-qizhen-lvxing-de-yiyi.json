@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "slug": "chen-qizhen-lvxing-de-yiyi",
+  "title": "旅行的意义",
+  "artist": "陈绮贞",
+  "credits": {
+    "lyrics": "陈绮贞",
+    "music": "陈绮贞"
+  },
+  "original_key": "D",
+  "degree_key": "C",
+  "capo": 2,
+  "language": "zh-CN",
+  "tags": ["华语", "女声", "弹唱", "级数谱"],
+  "source": {
+    "type": "user_document",
+    "reference": "陈绮贞 - 旅行的意义_级数歌本_v4.docx"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "intro",
+      "type": "instrument",
+      "label": "前奏",
+      "progression": "| 1 | 4 | 6m | 3m7 - 4 - - |"
+    },
+    {
+      "id": "travel-scenes-a",
+      "type": "lyric",
+      "chords": ["1", "6m7", "4", "5sus4   5"],
+      "lyric_sets": [
+        ["你看过了许多美景", "你看过了许多美女", "你迷失在地图上", "每一道短暂的光阴"],
+        ["你累积了许多飞行", "你用心挑选纪念品", "你搜集了地图上", "每一次的风和日丽"]
+      ],
+      "variant_labels": ["1.", "2."],
+      "spacing": "normal"
+    },
+    {
+      "id": "travel-scenes-b",
+      "type": "lyric",
+      "chords": ["1", "6m7", "♭7", "5sus4   5"],
+      "lyric_sets": [
+        ["你品尝了夜的巴黎", "你踏过下雪的北京", "你熟记书本里每一句", "你最爱的真理"],
+        ["你拥抱热情的岛屿", "你埋葬记忆的土耳其", "你留恋电影里", "美丽的不真实的场景"]
+      ],
+      "variant_labels": ["1.", "2."],
+      "spacing": "normal"
+    },
+    {
+      "id": "question-a",
+      "type": "lyric",
+      "chords": ["3m7♭5", "6(7)", "2m   2m(maj7)", "2m7   5"],
+      "lyrics": ["却说不出你爱我的原因", "却说不出你欣赏我", "哪一种表情", ""],
+      "widths": [1.35, 1.15, 1, 0.8],
+      "spacing": "normal"
+    },
+    {
+      "id": "question-b",
+      "type": "lyric",
+      "chords": ["♭7", "6(7)", "2m7 -", "5sus4   5"],
+      "lyric_sets": [
+        ["却说不出在什么场合", "我曾让你动心", "说不出离开的", "原因"],
+        ["却说不出在什么场合", "我曾让你分心", "说不出旅行的", "意义"]
+      ],
+      "variant_labels": ["1.", "2."],
+      "spacing": "normal"
+    },
+    {
+      "id": "interlude-1",
+      "type": "instrument",
+      "label": "间奏 1",
+      "progression": "| 1 | 4 | 6m | 5 - 4 - - |"
+    },
+    {
+      "id": "interlude-2",
+      "type": "instrument",
+      "label": "间奏 2",
+      "progression": "| ♭7 | 4/6 | 1/5 | 1/5 | 2/♯4 | 4m6 | 1/3 - 1m - - | 2m7 - 5 - - |"
+    },
+    {
+      "id": "return-question",
+      "type": "lyric",
+      "chords": ["♭7", "6(7)", "2m - 2m(maj7) 2m7", "5sus4   5"],
+      "lyrics": ["你勉强说出你爱我的原因", "却说不出你欣赏我", "哪一种表情", ""],
+      "widths": [1.25, 1, 1.15, 0.8],
+      "spacing": "normal"
+    },
+    {
+      "id": "return-heart",
+      "type": "lyric",
+      "chords": ["3m7♭5", "6(7)", "2m7 - 5sus4 5", "1"],
+      "lyrics": ["却说不出在什么场合", "我曾让你动心", "说不出离开的原因", ""],
+      "widths": [1.2, 0.9, 1.25, 0.65],
+      "spacing": "normal"
+    },
+    {
+      "id": "letters",
+      "type": "lyric",
+      "chords": ["3m7♭5", "6(7)", "2m7 - 5sus4 5", "3m7♭5   6(7)"],
+      "lyrics": ["勉强说出", "你为我寄出的每一封信", "都是你离开的原因", "你离开我"],
+      "widths": [0.75, 1.4, 1.15, 0.8],
+      "spacing": "normal"
+    },
+    {
+      "id": "meaning",
+      "type": "lyric",
+      "chords": ["2m7", "5sus4", "5"],
+      "lyrics": ["就是旅行", "的", "意义"],
+      "widths": [1.4, 0.7, 1.1],
+      "spacing": "generous"
+    },
+    {
+      "id": "outro",
+      "type": "instrument",
+      "label": "尾奏",
+      "progression": "|| 1 | 4 | 6m | 5 - 4 - - ||",
+      "repeat": "×2"
+    },
+    {
+      "id": "theory",
+      "type": "theory_legend",
+      "title": "和弦结构（相对根音）",
+      "items": [
+        { "quality": "m7", "formula": "R ♭3 5 ♭7" },
+        { "quality": "7", "formula": "R 3 5 ♭7" },
+        { "quality": "sus4", "formula": "R 4 5" },
+        { "quality": "m7♭5", "formula": "R ♭3 ♭5 ♭7" },
+        { "quality": "m(maj7)", "formula": "R ♭3 5 7" },
+        { "quality": "m6", "formula": "R ♭3 5 6" }
+      ],
+      "note": "斜线和弦 X/Y：Y 表示最低音的级数，例如 4/6。"
+    }
+  ]
+}

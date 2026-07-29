@@ -1,0 +1,66 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  songs: CollectionEntry<"songs">[];
+  currentSlug?: string;
+}
+
+const { songs, currentSlug } = Astro.props;
+const sortedSongs = [...songs].sort((a, b) =>
+  `${a.data.artist}${a.data.title}`.localeCompare(
+    `${b.data.artist}${b.data.title}`,
+    "zh-CN"
+  )
+);
+---
+
+<aside class="side-nav" id="side-nav" aria-label="歌曲目录">
+  <div class="side-nav__brand">
+    <a href="/" aria-label="返回曲库首页">
+      <span class="brand-mark" aria-hidden="true">G</span>
+      <span>
+        <strong>Guitare</strong>
+        <small>Songbook</small>
+      </span>
+    </a>
+    <button class="icon-button mobile-only" type="button" data-close-nav aria-label="关闭目录">
+      ×
+    </button>
+  </div>
+
+  <label class="search-box">
+    <span class="sr-only">搜索歌曲或歌手</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m21 21-4.4-4.4m2.4-5.1A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z" />
+    </svg>
+    <input type="search" placeholder="搜索歌曲或歌手" data-song-filter />
+  </label>
+
+  <nav class="song-directory">
+    <p class="directory-label">歌曲目录 <span>{sortedSongs.length}</span></p>
+    <ul data-song-list>
+      {
+        sortedSongs.map(({ data }) => (
+          <li
+            data-search-text={`${data.title} ${data.artist} ${data.tags.join(" ")}`}
+            class:list={{ active: data.slug === currentSlug }}
+          >
+            <a href={`/song/${data.slug}/`}>
+              <span class="directory-title">{data.title}</span>
+              <span class="directory-artist">{data.artist}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="empty-filter" data-empty-filter hidden>没有找到歌曲</p>
+  </nav>
+
+  <div class="side-nav__footer">
+    <span class="offline-dot" aria-hidden="true"></span>
+    <span data-network-state>可离线使用</span>
+  </div>
+</aside>
+<button class="nav-scrim" data-close-nav aria-label="关闭目录"></button>
+

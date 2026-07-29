@@ -1,0 +1,73 @@
+---
+import { getCollection } from "astro:content";
+import SideNav from "../components/SideNav.astro";
+import AppLayout from "../layouts/AppLayout.astro";
+
+const songs = await getCollection("songs");
+const sortedSongs = [...songs].sort((a, b) =>
+  `${a.data.artist}${a.data.title}`.localeCompare(
+    `${b.data.artist}${b.data.title}`,
+    "zh-CN"
+  )
+);
+---
+
+<AppLayout>
+  <div class="app-shell">
+    <SideNav songs={songs} />
+    <main class="library-main">
+      <header class="mobile-topbar">
+        <button class="icon-button" type="button" data-open-nav aria-label="打开歌曲目录">☰</button>
+        <strong>Guitare Songbook</strong>
+        <span aria-hidden="true"></span>
+      </header>
+
+      <section class="library-hero">
+        <p class="eyebrow">PRIVATE MUSIC LIBRARY</p>
+        <h1>打开就能弹的<br /><em>私人歌谱库</em></h1>
+        <p>级数和弦、歌词与段落结构保持对齐。手机、平板和电脑使用同一份谱，收藏后断网也能打开。</p>
+        <div class="hero-actions">
+          <a class="primary-button" href={`/song/${sortedSongs[0]?.data.slug}/`}>打开第一首歌</a>
+          <button class="secondary-button" type="button" data-install-app hidden>安装到设备</button>
+        </div>
+      </section>
+
+      <section class="library-section" aria-labelledby="library-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">SONG LIBRARY</p>
+            <h2 id="library-title">全部歌曲</h2>
+          </div>
+          <span>{sortedSongs.length} 首</span>
+        </div>
+        <div class="song-card-grid" data-song-cards>
+          {
+            sortedSongs.map(({ data }) => (
+              <a
+                class="song-card"
+                href={`/song/${data.slug}/`}
+                data-search-text={`${data.title} ${data.artist} ${data.tags.join(" ")}`}
+                data-pagefind-ignore
+              >
+                <div class="song-card__art" aria-hidden="true">
+                  <span>{data.title.slice(0, 1)}</span>
+                </div>
+                <div class="song-card__copy">
+                  <h3>{data.title}</h3>
+                  <p>{data.artist}</p>
+                  <div>
+                    <span>原调 {data.original_key}</span>
+                    <span>Capo {data.capo}</span>
+                  </div>
+                </div>
+                <span class="song-card__arrow">→</span>
+              </a>
+            ))
+          }
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="../scripts/app-shell.ts"></script>
+</AppLayout>
+

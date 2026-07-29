@@ -1,0 +1,39 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Guitare Songbook",
+  description = "适合手机、平板和电脑使用的私人吉他级数歌谱库"
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN" data-theme="paper">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#123b5d" />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+    <script>
+      const savedTheme = localStorage.getItem("songbook-theme");
+      if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js");
+        });
+      }
+    </script>
+  </body>
+</html>

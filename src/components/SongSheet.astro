@@ -1,0 +1,122 @@
+---
+import type { Song } from "../lib/song-schema";
+
+interface Props {
+  song: Song;
+}
+
+const { song } = Astro.props;
+
+function gridTemplate(widths: number[] | undefined, count: number) {
+  return (widths ?? Array.from({ length: count }, () => 1))
+    .map((width) => `${width}fr`)
+    .join(" ");
+}
+---
+
+<article
+  class="song-sheet"
+  data-song-sheet
+  data-degree-key={song.degree_key}
+  data-song-title={song.title}
+  data-pagefind-body
+>
+  <header class="song-header">
+    <div class="song-header__credits">
+      <strong>演唱：{song.artist}</strong>
+      <span>词：{song.credits.lyrics}</span>
+      <span>曲：{song.credits.music}</span>
+    </div>
+    <div class="song-header__title">
+      <p>GUITARE SONGBOOK</p>
+      <h1 data-pagefind-meta="title">{song.title}</h1>
+      <span>{song.artist}</span>
+    </div>
+    <dl class="song-header__key">
+      <div><dt>原调</dt><dd>{song.original_key}</dd></div>
+      <div><dt>级数基准</dt><dd data-active-key>{song.degree_key}</dd></div>
+      <div><dt>Capo</dt><dd>{song.capo}</dd></div>
+    </dl>
+  </header>
+
+  <div class="song-body">
+    {
+      song.blocks.map((block) => {
+        if (block.type === "instrument") {
+          return (
+            <section class="instrument-block" data-block-id={block.id}>
+              <span class="instrument-label">[{block.label}]</span>
+              <span class="instrument-progression" data-degree={block.progression}>
+                {block.progression}
+              </span>
+              {block.repeat && <strong class="repeat-mark">{block.repeat}</strong>}
+            </section>
+          );
+        }
+
+        if (block.type === "lyric") {
+          const lyricRows = block.lyrics ? [block.lyrics] : block.lyric_sets ?? [];
+          const labels = block.variant_labels ?? [];
+          const grid = gridTemplate(block.widths, block.chords.length);
+          return (
+            <section
+              class={`lyric-block spacing-${block.spacing}`}
+              data-block-id={block.id}
+              style={`--phrase-grid: ${grid}`}
+            >
+              <div class="desktop-lyric">
+                <div class="chord-row phrase-grid" aria-label="和弦">
+                  {block.chords.map((chord) => (
+                    <span data-degree={chord}>{chord}</span>
+                  ))}
+                </div>
+                {lyricRows.map((row, rowIndex) => (
+                  <div class="lyric-line">
+                    {labels[rowIndex] && (
+                      <span class="variant-label">{labels[rowIndex]}</span>
+                    )}
+                    <div class="lyric-row phrase-grid">
+                      {row.map((phrase) => <span>{phrase || "\u00a0"}</span>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div class="mobile-lyric">
+                {lyricRows.map((row, rowIndex) => (
+                  <div class="mobile-variant">
+                    {labels[rowIndex] && (
+                      <span class="mobile-variant__label">{labels[rowIndex]}</span>
+                    )}
+                    <div class="mobile-phrase-grid">
+                      {block.chords.map((chord, phraseIndex) => (
+                        <div class="mobile-phrase">
+                          <span class="mobile-phrase__chord" data-degree={chord}>{chord}</span>
+                          <span class="mobile-phrase__lyric">
+                            {row[phraseIndex] || "\u00a0"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        }
+
+        return (
+          <section class="theory-legend" data-block-id={block.id}>
+            <h2>{block.title}</h2>
+            <div class="legend-grid">
+              {block.items.map((item) => (
+                <p><strong>{item.quality}</strong> = {item.formula}</p>
+              ))}
+            </div>
+            {block.note && <p class="legend-note">{block.note}</p>}
+          </section>
+        );
+      })
+    }
+  </div>
+</article>

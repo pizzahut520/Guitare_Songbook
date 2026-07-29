@@ -1,0 +1,62 @@
+---
+import { getCollection } from "astro:content";
+import SideNav from "../../components/SideNav.astro";
+import SongSheet from "../../components/SongSheet.astro";
+import AppLayout from "../../layouts/AppLayout.astro";
+
+export async function getStaticPaths() {
+  const songs = await getCollection("songs");
+  return songs.map((song) => ({
+    params: { slug: song.data.slug },
+    props: { song, songs }
+  }));
+}
+
+const { song, songs } = Astro.props;
+const data = song.data;
+---
+
+<AppLayout title={`${data.title} · ${data.artist} | Guitare Songbook`}>
+  <div class="app-shell song-page-shell">
+    <SideNav songs={songs} currentSlug={data.slug} />
+    <main class="song-main">
+      <header class="song-toolbar">
+        <div class="toolbar-primary">
+          <button class="icon-button mobile-only" type="button" data-open-nav aria-label="打开歌曲目录">☰</button>
+          <a class="back-link desktop-only" href="/">← 曲库</a>
+          <div class="toolbar-song-title">
+            <strong>{data.title}</strong>
+            <span>{data.artist}</span>
+          </div>
+        </div>
+
+        <div class="toolbar-controls" aria-label="看谱设置">
+          <label class="select-control">
+            <span>和弦</span>
+            <select data-chord-mode>
+              <option value="degree">级数</option>
+              <option value="chord">和弦名</option>
+            </select>
+          </label>
+          <div class="stepper" aria-label="移调">
+            <button type="button" data-transpose-down aria-label="降半音">−</button>
+            <span data-transpose-value>移调 0</span>
+            <button type="button" data-transpose-up aria-label="升半音">＋</button>
+          </div>
+          <button class="tool-button" type="button" data-font-decrease aria-label="缩小字体">A−</button>
+          <button class="tool-button" type="button" data-font-increase aria-label="放大字体">A＋</button>
+          <button class="tool-button" type="button" data-theme-toggle aria-label="切换颜色主题">◐</button>
+          <button class="tool-button" type="button" data-wake-lock aria-pressed="false">常亮</button>
+          <button class="tool-button desktop-only" type="button" data-print>打印</button>
+          <button class="tool-button desktop-only" type="button" data-fullscreen>全屏</button>
+        </div>
+      </header>
+
+      <div class="song-stage">
+        <SongSheet song={data} />
+      </div>
+    </main>
+  </div>
+  <script src="../../scripts/app-shell.ts"></script>
+  <script src="../../scripts/song-controls.ts"></script>
+</AppLayout>
