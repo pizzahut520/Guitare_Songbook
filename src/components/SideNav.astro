@@ -8,9 +8,9 @@ interface Props {
 
 const { songs, currentSlug } = Astro.props;
 const sortedSongs = [...songs].sort((a, b) =>
-  `${a.data.artist}${a.data.title}`.localeCompare(
-    `${b.data.artist}${b.data.title}`,
-    "zh-CN"
+  `${a.data.title}\u0000${a.data.artist}`.localeCompare(
+    `${b.data.title}\u0000${b.data.artist}`,
+    "zh-CN-u-co-pinyin"
   )
 );
 ---
@@ -43,6 +43,9 @@ const sortedSongs = [...songs].sort((a, b) =>
       {
         sortedSongs.map(({ data }) => (
           <li
+            data-song-item
+            data-song-slug={data.slug}
+            data-sort-key={`${data.title}\u0000${data.artist}`}
             data-search-text={`${data.title} ${data.artist} ${data.tags.join(" ")}`}
             class:list={{ active: data.slug === currentSlug }}
           >
@@ -50,6 +53,16 @@ const sortedSongs = [...songs].sort((a, b) =>
               <span class="directory-title">{data.title}</span>
               <span class="directory-artist">{data.artist}</span>
             </a>
+            <button
+              class="favorite-button favorite-button--directory"
+              type="button"
+              data-favorite-toggle={data.slug}
+              aria-label={`为《${data.title}》加星`}
+              aria-pressed="false"
+              title="加星"
+            >
+              <span aria-hidden="true">☆</span>
+            </button>
           </li>
         ))
       }

@@ -217,6 +217,7 @@ button {
 }
 
 .song-directory li {
+  position: relative;
   margin-bottom: 0.25rem;
   border-radius: 0.7rem;
 }
@@ -232,7 +233,7 @@ button {
 
 .song-directory a {
   display: block;
-  padding: 0.7rem 0.75rem;
+  padding: 0.7rem 2.8rem 0.7rem 0.75rem;
 }
 
 .directory-title,
@@ -391,17 +392,22 @@ button {
 }
 
 .song-card {
+  position: relative;
   min-width: 0;
-  display: grid;
-  grid-template-columns: 4rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
   border: 1px solid var(--line);
   border-radius: 1rem;
   background: var(--paper);
   box-shadow: 0 8px 24px rgb(39 46 51 / 4%);
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.song-card__link {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 3.5rem 1rem 1rem;
 }
 
 .song-card:hover {
@@ -455,6 +461,52 @@ button {
 .song-card__arrow {
   color: var(--terracotta);
   font-size: 1.4rem;
+}
+
+.favorite-button {
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.favorite-button:hover,
+.favorite-button:focus-visible,
+.favorite-button[aria-pressed="true"] {
+  color: #c47a13;
+}
+
+.favorite-button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.favorite-button--directory {
+  position: absolute;
+  top: 50%;
+  right: 0.65rem;
+  width: 2rem;
+  height: 2rem;
+  transform: translateY(-50%);
+  font-size: 1.15rem;
+}
+
+.favorite-button--card {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: 1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  transform: translateY(-50%);
+  font-size: 1.35rem;
+}
+
+.favorite-button--toolbar {
+  font-size: 1.15rem;
 }
 
 .song-main {

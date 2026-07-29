@@ -31,6 +31,16 @@ const data = song.data;
         </div>
 
         <div class="toolbar-controls" aria-label="看谱设置">
+          <button
+            class="tool-button favorite-button favorite-button--toolbar"
+            type="button"
+            data-favorite-toggle={data.slug}
+            aria-label={`为《${data.title}》加星`}
+            aria-pressed="false"
+            title="加星"
+          >
+            <span aria-hidden="true">☆</span>
+          </button>
           <label class="select-control">
             <span>和弦</span>
             <select data-chord-mode>

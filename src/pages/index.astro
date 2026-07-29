@@ -5,9 +5,9 @@ import AppLayout from "../layouts/AppLayout.astro";
 
 const songs = await getCollection("songs");
 const sortedSongs = [...songs].sort((a, b) =>
-  `${a.data.artist}${a.data.title}`.localeCompare(
-    `${b.data.artist}${b.data.title}`,
-    "zh-CN"
+  `${a.data.title}\u0000${a.data.artist}`.localeCompare(
+    `${b.data.title}\u0000${b.data.artist}`,
+    "zh-CN-u-co-pinyin"
   )
 );
 ---
@@ -43,25 +43,39 @@ const sortedSongs = [...songs].sort((a, b) =>
         <div class="song-card-grid" data-song-cards>
           {
             sortedSongs.map(({ data }) => (
-              <a
+              <article
                 class="song-card"
-                href={`/song/${data.slug}/`}
+                data-song-item
+                data-song-slug={data.slug}
+                data-sort-key={`${data.title}\u0000${data.artist}`}
                 data-search-text={`${data.title} ${data.artist} ${data.tags.join(" ")}`}
                 data-pagefind-ignore
               >
-                <div class="song-card__art" aria-hidden="true">
-                  <span>{data.title.slice(0, 1)}</span>
-                </div>
-                <div class="song-card__copy">
-                  <h3>{data.title}</h3>
-                  <p>{data.artist}</p>
-                  <div>
-                    <span>原调 {data.original_key}</span>
-                    <span>Capo {data.capo}</span>
+                <a class="song-card__link" href={`/song/${data.slug}/`}>
+                  <div class="song-card__art" aria-hidden="true">
+                    <span>{data.title.slice(0, 1)}</span>
                   </div>
-                </div>
-                <span class="song-card__arrow">→</span>
-              </a>
+                  <div class="song-card__copy">
+                    <h3>{data.title}</h3>
+                    <p>{data.artist}</p>
+                    <div>
+                      <span>原调 {data.original_key}</span>
+                      <span>Capo {data.capo}</span>
+                    </div>
+                  </div>
+                  <span class="song-card__arrow">→</span>
+                </a>
+                <button
+                  class="favorite-button favorite-button--card"
+                  type="button"
+                  data-favorite-toggle={data.slug}
+                  aria-label={`为《${data.title}》加星`}
+                  aria-pressed="false"
+                  title="加星"
+                >
+                  <span aria-hidden="true">☆</span>
+                </button>
+              </article>
             ))
           }
         </div>
