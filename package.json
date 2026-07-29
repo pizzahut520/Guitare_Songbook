@@ -12,6 +12,7 @@
     "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
     "check": "astro check",
+    "songs:import": "node scripts/import-song-texts.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "verify": "astro check && vitest run && astro build && pagefind --site dist"

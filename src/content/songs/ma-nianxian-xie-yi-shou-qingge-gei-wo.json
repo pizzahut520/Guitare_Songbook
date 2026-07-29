@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "slug": "ma-nianxian-xie-yi-shou-qingge-gei-wo",
+  "title": "寫一首情歌給我",
+  "artist": "馬念先",
+  "credits": {
+    "lyrics": "馬念先",
+    "music": "馬念先"
+  },
+  "original_key": "A",
+  "degree_key": "A",
+  "capo": 0,
+  "language": "zh-TW",
+  "tags": [
+    "华语",
+    "男声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "寫一首情歌給我 - 馬念先.txt"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "section-01",
+      "type": "instrument",
+      "label": "前奏",
+      "progression": "1 | 1   5   4   5",
+      "repeat": "×2"
+    },
+    {
+      "id": "section-02",
+      "type": "lyric",
+      "chords": [
+        "1   5   4/6   5"
+      ],
+      "lyrics": [
+        "妳 就是妳 帶著微笑對我拼命眨眼睛"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-03",
+      "type": "lyric",
+      "chords": [
+        "1   5   4/6   5"
+      ],
+      "lyrics": [
+        "嘿 就是妳 送我回家不管颳風或下雨"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-04",
+      "type": "lyric",
+      "chords": [
+        "1   3m7   2m7   5"
+      ],
+      "lyrics": [
+        "陪我去看電影   帶我去吃好吃的東西"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-05",
+      "type": "lyric",
+      "chords": [
+        "1   3m7   4/6   5"
+      ],
+      "lyrics": [
+        "可是愛情不只這樣而已"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-06",
+      "type": "lyric",
+      "chords": [
+        "2m7   5   3m7   6m7"
+      ],
+      "lyrics": [
+        "妳知道 鮮花沒有幾天就凋落 Party 都有結束的時候"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-07",
+      "type": "lyric",
+      "chords": [
+        "2m7   5   4maj7"
+      ],
+      "lyrics": [
+        "難道妳 真的 從來都沒想過 用你最擅長的方式對我說"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-08",
+      "type": "lyric",
+      "chords": [
+        "3m7   2m7"
+      ],
+      "lyrics": [
+        "寫一首情歌給我 把吻痕留在心中"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-09",
+      "type": "lyric",
+      "chords": [
+        "1maj7   2m7   3m7   4maj7"
+      ],
+      "lyrics": [
+        "這麼久 妳怎麼都不懂    喔 喔 喔"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-11",
+      "type": "lyric",
+      "chords": [
+        "2m7   ♭6   5m7   1"
+      ],
+      "lyrics": [
+        "不知道我還要等多久"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-12",
+      "type": "instrument",
+      "label": "間奏",
+      "progression": "1   5   4   5 | 1",
+      "repeat": "×2"
+    },
+    {
+      "id": "section-13",
+      "type": "lyric",
+      "chords": [
+        "1   5   4/6   5"
+      ],
+      "lyrics": [
+        "妳 就是妳 逗我開心最後卻壞了我的心情"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-14",
+      "type": "lyric",
+      "chords": [
+        "1   5   4/6   5"
+      ],
+      "lyrics": [
+        "嘿 總是妳 送給我禮物卻沒有送給我驚喜"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-15",
+      "type": "lyric",
+      "chords": [
+        "1   3m7   2m7   5"
+      ],
+      "lyrics": [
+        "妳沒有壞脾氣   但是真的遲鈍的可以"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-16",
+      "type": "lyric",
+      "chords": [
+        "1   3m7   4/6   5"
+      ],
+      "lyrics": [
+        "我覺得這樣好可惜"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-17",
+      "type": "lyric",
+      "chords": [
+        "2m7   5   3m7   6m7"
+      ],
+      "lyrics": [
+        "我知道 妳的愛不像鮮花會凋落 只是 浪漫不夠"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-18",
+      "type": "lyric",
+      "chords": [
+        "2m7   5   4maj7"
+      ],
+      "lyrics": [
+        "難道妳真的 從來都沒想過 用妳最擅長的方式對我說"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-19",
+      "type": "lyric",
+      "chords": [
+        "3m7   2m7"
+      ],
+      "lyrics": [
+        "寫一首情歌給我 把吻痕留在心中"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-20",
+      "type": "lyric",
+      "chords": [
+        "1maj7   2m7   3m7   4maj7"
+      ],
+      "lyrics": [
+        "這麼久 妳怎麼都不懂    喔 喔 喔"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-22",
+      "type": "lyric",
+      "chords": [
+        "1maj7   4maj7"
+      ],
+      "lyrics": [
+        "我知道妳一定會這麼做"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-24",
+      "type": "lyric",
+      "chords": [
+        "1maj7   4maj7"
+      ],
+      "lyrics": [
+        "只是妳現在還不懂"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-26",
+      "type": "lyric",
+      "chords": [
+        "2m7   4m7/1   1   5   4   5"
+      ],
+      "lyrics": [
+        "我不在乎等多久 喔～喔～喔"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-27",
+      "type": "instrument",
+      "label": "尾奏",
+      "progression": "1   5   4   5 | 1"
+    }
+  ]
+}
