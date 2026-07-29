@@ -2,6 +2,11 @@ node_modules/
 dist/
 .astro/
 .wrangler/
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
 .DS_Store
 *.log
 
