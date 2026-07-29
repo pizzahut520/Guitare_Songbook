@@ -1044,12 +1044,13 @@ button {
 
   .mobile-phrase-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
   }
 
   .mobile-phrase {
     min-width: 0;
+    width: 100%;
     padding: 0.7rem 0.7rem 0.75rem;
     border-left: 2px solid color-mix(in srgb, var(--blue) 38%, transparent);
     background: color-mix(in srgb, var(--surface) 62%, transparent);
@@ -1074,7 +1075,9 @@ button {
     color: var(--ink);
     font-family: "Noto Serif SC", "Songti SC", "STSong", serif;
     font-size: 0.93em;
+    line-break: strict;
     line-height: 1.6;
+    overflow-wrap: anywhere;
   }
 
   .legend-grid {
@@ -1082,9 +1085,13 @@ button {
   }
 }
 
-@media (max-width: 340px) {
+@media (min-width: 600px) and (max-width: 720px) {
   .mobile-phrase-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mobile-phrase:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 }
 

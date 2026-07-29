@@ -14,7 +14,7 @@
     "check": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "pnpm check && pnpm test && pnpm build"
+    "verify": "astro check && vitest run && astro build && pagefind --site dist"
   },
   "dependencies": {
     "@vite-pwa/astro": "1.2.0",
