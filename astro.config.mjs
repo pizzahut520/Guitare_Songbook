@@ -2,7 +2,7 @@ import { defineConfig } from "astro/config";
 import AstroPWA from "@vite-pwa/astro";
 
 export default defineConfig({
-  site: "https://guitare-songbook.workers.dev",
+  site: "https://guitare-songbook.guitare-songbook.workers.dev",
   integrations: [
     AstroPWA({
       registerType: "autoUpdate",
