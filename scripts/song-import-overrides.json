@@ -9,5 +9,185 @@
     },
     "language": "zh-TW",
     "tags": ["华语", "男声", "弹唱", "级数谱"]
+  },
+  {
+    "title": "愛情青紅燈",
+    "artist": "脫拉庫",
+    "slug": "tolaku-aiqing-qinghongdeng",
+    "credits": {
+      "lyrics": "張國璽",
+      "music": "張國璽"
+    },
+    "language": "zh-TW",
+    "tags": ["华语", "乐队", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/21525；词曲：https://www.mulanci.org/lyric/tl273733/"
+  },
+  {
+    "title": "安和桥",
+    "artist": "宋冬野",
+    "slug": "song-dongye-anhe-qiao",
+    "credits": {
+      "lyrics": "宋冬野",
+      "music": "宋冬野"
+    },
+    "language": "zh-CN",
+    "tags": ["华语", "男声", "民谣", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦编配：https://chord4.com/tabs/34934"
+  },
+  {
+    "title": "抱著你",
+    "artist": "Zhang Zhen Yue",
+    "slug": "zhang-zhenyue-baozhe-ni",
+    "credits": {
+      "lyrics": "張震嶽",
+      "music": "張震嶽"
+    },
+    "original_key": "G♭",
+    "degree_key": "E",
+    "capo": 2,
+    "language": "zh-TW",
+    "tags": ["华语", "男声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/11302；词曲：https://www.mulanci.org/lyric/ta30736/"
+  },
+  {
+    "title": "表面的和平",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-biaomian-de-heping",
+    "credits": {
+      "lyrics": "陳綺貞",
+      "music": "陳綺貞"
+    },
+    "language": "zh-TW",
+    "tags": ["华语", "女声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/11813；词曲：https://chord4.com/zh-hant/tabs/1018"
+  },
+  {
+    "title": "別急著說妳愛我到天長地久",
+    "artist": "Sticky Rice",
+    "slug": "sticky-rice-bie-jizhe-shuo-ni-aiwo",
+    "credits": {
+      "lyrics": "馬念先",
+      "music": "馬念先"
+    },
+    "language": "zh-TW",
+    "tags": ["华语", "乐队", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/28668；词曲：https://music-tw.line.me/track/3650764006"
+  },
+  {
+    "title": "別哭我最愛的人",
+    "artist": "鄭智化",
+    "slug": "zheng-zhihua-bie-ku-wo-zui-ai-de-ren",
+    "credits": {
+      "lyrics": "鄭智化",
+      "music": "鄭智化"
+    },
+    "original_key": "G♭",
+    "degree_key": "C",
+    "capo": 6,
+    "language": "zh-CN",
+    "tags": ["华语", "男声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/8224；原调/Capo：https://www.guitarworld.com.cn/pu/q54751"
+  },
+  {
+    "title": "台北某個地方",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-taipei-mouge-difang",
+    "credits": {
+      "lyrics": "陳綺貞",
+      "music": "陳綺貞"
+    },
+    "language": "zh-TW",
+    "tags": ["华语", "女声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦与词曲：https://chord4.com/zh-hant/tabs/28830"
+  },
+  {
+    "title": "告訴我",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-gaosu-wo",
+    "credits": {
+      "lyrics": "陳綺貞",
+      "music": "陳綺貞"
+    },
+    "language": "zh-CN",
+    "tags": ["华语", "女声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦：https://chord4.com/zh-hant/tabs/10208；词曲：https://music-tw.line.me/track/1017128006"
+  },
+  {
+    "title": "天天想你",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-tiantian-xiang-ni",
+    "credits": {
+      "lyrics": "陳樂融",
+      "music": "陳志遠"
+    },
+    "language": "zh-TW",
+    "tags": ["华语", "女声", "翻唱", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦：https://chord4.com/zh-hant/tabs/35181；词曲：https://music.apple.com/tw/album/%E5%A4%A9%E5%A4%A9%E6%83%B3%E4%BD%A0/1444826215"
+  },
+  {
+    "title": "太聰明",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-tai-congming",
+    "credits": {
+      "lyrics": "陳綺貞",
+      "music": "陳綺貞"
+    },
+    "language": "zh-TW",
+    "tags": ["华语", "女声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦与词曲：https://chord4.com/zh-hant/tabs/1001"
+  },
+  {
+    "title": "微涼的你",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-weiliang-de-ni",
+    "credits": {
+      "lyrics": "陳綺貞",
+      "music": "陳綺貞"
+    },
+    "original_key": "E♭",
+    "degree_key": "D",
+    "capo": 1,
+    "language": "zh-CN",
+    "tags": ["华语", "女声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦：https://chord4.com/zh-hant/tabs/1484；词曲：https://music-tw.line.me/track/1017691002"
+  },
+  {
+    "title": "我喜歡上你時的内心活動",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-xihuan-ni-neixin-huodong",
+    "credits": {
+      "lyrics": "韓寒",
+      "music": "陳光榮"
+    },
+    "language": "zh-CN",
+    "tags": ["华语", "女声", "电影原声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦与词曲：https://chord4.com/zh-hant/tabs/19178"
+  },
+  {
+    "title": "還是會寂寞",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-haishi-hui-jimo",
+    "credits": {
+      "lyrics": "陳綺貞",
+      "music": "陳綺貞"
+    },
+    "original_key": "G♭",
+    "degree_key": "F",
+    "capo": 1,
+    "language": "zh-TW",
+    "tags": ["华语", "女声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦与词曲：https://chord4.com/zh-hant/tabs/1009"
+  },
+  {
+    "title": "魚",
+    "artist": "Cheer Chen",
+    "slug": "cheer-chen-yu",
+    "credits": {
+      "lyrics": "陳綺貞",
+      "music": "陳綺貞"
+    },
+    "language": "zh-TW",
+    "tags": ["华语", "女声", "弹唱", "级数谱"],
+    "source_reference": "用户文本；和弦：https://chord4.com/zh-hant/tabs/11150；词曲：https://music-tw.line.me/track/1047253020"
   }
 ]

@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "slug": "tolaku-aiqing-qinghongdeng",
+  "title": "愛情青紅燈",
+  "artist": "脫拉庫",
+  "credits": {
+    "lyrics": "張國璽",
+    "music": "張國璽"
+  },
+  "original_key": "C",
+  "degree_key": "C",
+  "capo": 0,
+  "language": "zh-TW",
+  "tags": [
+    "华语",
+    "乐队",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/21525；词曲：https://www.mulanci.org/lyric/tl273733/"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "section-01",
+      "type": "instrument",
+      "label": "前奏",
+      "progression": "1   1   3   3   6m   6m   4   4m"
+    },
+    {
+      "id": "1-02",
+      "type": "lyric",
+      "chords": [
+        "1   3   6m   1"
+      ],
+      "lyrics": [
+        "你問我是否曾經為誰愛過 你問我是否曾經為誰停留"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-03",
+      "type": "lyric",
+      "chords": [
+        "1   3   6m   1"
+      ],
+      "lyrics": [
+        "你問我是否把誰放在心中 而你的一切我卻不曾承諾"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-04",
+      "type": "lyric",
+      "chords": [
+        "♭6   ♭7   ♭6   5"
+      ],
+      "lyrics": [
+        "在這愛的街頭 有你有我 卻一直錯過"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-05",
+      "type": "lyric",
+      "chords": [
+        "1   3   6m   1"
+      ],
+      "lyrics": [
+        "我現在知道什麼叫做寂寞 我知道什麼叫做曾經擁有"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-06",
+      "type": "lyric",
+      "chords": [
+        "1   3   6m   1"
+      ],
+      "lyrics": [
+        "我知道你曾真心對待過我 我現在站在路口等你回頭"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-07",
+      "type": "lyric",
+      "chords": [
+        "♭6   ♭7   ♭6   5"
+      ],
+      "lyrics": [
+        "在這愛的街頭 送你遠走 辛酸對誰說"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-08",
+      "type": "lyric",
+      "chords": [
+        "1   1   6m   6m   4   4   5   5"
+      ],
+      "lyrics": [
+        "愛情青紅燈 我攏看襪清 躲在巷子裡 眼淚流襪停"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-09",
+      "type": "lyric",
+      "chords": [
+        "1   1   6m   6m   4   4   5   5"
+      ],
+      "lyrics": [
+        "愛情青紅燈 看沒阮前程 不甘 say goodbye 放你走風塵 這愛情"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-10",
+      "type": "lyric",
+      "chords": [
+        "1   1   6m   6m   4   4   5   5"
+      ],
+      "lyrics": [
+        "這浮沉 這人生 站在愛情愛情愛情的青紅燈"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-11",
+      "type": "instrument",
+      "label": "尾奏",
+      "progression": "1   1   3   3   6m   6m   4   4m   1"
+    }
+  ]
+}

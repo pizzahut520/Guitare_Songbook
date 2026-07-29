@@ -4,12 +4,14 @@ import {
   chordToDegree,
   cleanLyricLines,
   compactRepeatedLyricBlocks,
-  isChordLine
+  isChordLine,
+  songFromParsed
 } from "../scripts/import-song-texts.mjs";
 
 describe("song text importer", () => {
   it("recognizes chord rows without mistaking prose for chords", () => {
     expect(isChordLine("A    E    D/F#    E")).toBe(true);
+    expect(isChordLine("Gm7 Bbm7 Csus4 D7sus4")).toBe(true);
     expect(isChordLine("妳就是妳 帶著微笑對我眨眼睛")).toBe(false);
   });
 
@@ -45,7 +47,7 @@ describe("song text importer", () => {
     expect(cleaned.lines).toContain("不同的一句");
   });
 
-  it("compacts exact repeated lyric blocks only within one continuous section", () => {
+  it("compacts only immediately repeated lyric blocks", () => {
     const repeated = {
       id: "chorus",
       type: "lyric",
@@ -67,5 +69,63 @@ describe("song text importer", () => {
     ]);
     expect(compacted.removed).toBe(1);
     expect(compacted.blocks).toHaveLength(3);
+  });
+
+  it("preserves a recurring lyric after another lyric block", () => {
+    const recurring = {
+      id: "recurring",
+      type: "lyric",
+      chords: ["1   5"],
+      lyrics: ["反复出现的歌词"],
+      spacing: "normal"
+    };
+    const other = {
+      id: "other",
+      type: "lyric",
+      chords: ["4   5"],
+      lyrics: ["中间的歌词"],
+      spacing: "normal"
+    };
+
+    const compacted = compactRepeatedLyricBlocks([
+      recurring,
+      other,
+      { ...recurring, id: "recurring-again" }
+    ]);
+
+    expect(compacted.removed).toBe(0);
+    expect(compacted.blocks).toHaveLength(3);
+  });
+
+  it("keeps the source key for degree conversion while allowing playable-key overrides", () => {
+    const result = songFromParsed(
+      {
+        title: "测试歌曲",
+        artist: "测试艺人",
+        originalKey: "G",
+        capo: "",
+        file: "测试歌曲.txt",
+        body: ["G   C", "测试歌词"]
+      },
+      {
+        slug: "test-song",
+        credits: { lyrics: "测试", music: "测试" },
+        original_key: "G♭",
+        degree_key: "C",
+        capo: 6,
+        language: "zh-CN",
+        tags: ["测试"],
+        source_reference: "核对来源"
+      }
+    );
+
+    expect(result.warnings).toEqual([]);
+    expect(result.song).toMatchObject({
+      original_key: "G♭",
+      degree_key: "C",
+      capo: 6,
+      source: { reference: "核对来源" },
+      blocks: [{ chords: ["1   4"] }]
+    });
   });
 });

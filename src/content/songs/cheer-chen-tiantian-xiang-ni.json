@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "slug": "cheer-chen-tiantian-xiang-ni",
+  "title": "天天想你",
+  "artist": "Cheer Chen",
+  "credits": {
+    "lyrics": "陳樂融",
+    "music": "陳志遠"
+  },
+  "original_key": "D",
+  "degree_key": "D",
+  "capo": 0,
+  "language": "zh-TW",
+  "tags": [
+    "华语",
+    "女声",
+    "翻唱",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦：https://chord4.com/zh-hant/tabs/35181；词曲：https://music.apple.com/tw/album/%E5%A4%A9%E5%A4%A9%E6%83%B3%E4%BD%A0/1444826215"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "section-01",
+      "type": "instrument",
+      "label": "前奏",
+      "progression": "♭6maj7   ♭7add9   1sus2 | ♭6maj7   ♭7add9   57sus4   57"
+    },
+    {
+      "id": "section-02",
+      "type": "lyric",
+      "chords": [
+        "1   4   1/3   2m7   ♭7   57sus4   57"
+      ],
+      "lyrics": [
+        "當我佇立在窗前 你愈走愈遠 我的每一次心跳 你是否聽見"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-03",
+      "type": "lyric",
+      "chords": [
+        "1   4   1/3   2m7   ♭7   57"
+      ],
+      "lyrics": [
+        "當我徘徊在深夜 你在我心田 你的每一句誓言 迴盪在耳邊"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-04",
+      "type": "lyric",
+      "chords": [
+        "1   6   2m   2m/♭2   2m/1   57"
+      ],
+      "lyrics": [
+        "隱隱約約閃動的雙眼 藏著你的羞怯 加深我的思念"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-05",
+      "type": "lyric",
+      "chords": [
+        "1   6   2m   4   2/♯4   57"
+      ],
+      "lyrics": [
+        "兩顆心的交界 你一定會看見 只要你願意走向前"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-06",
+      "type": "lyric",
+      "chords": [
+        "1   4   1/3   2m7   57   1   57sus2   57"
+      ],
+      "lyrics": [
+        "天天想你 天天問自己 到什麼時候才能告訴你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-07",
+      "type": "lyric",
+      "chords": [
+        "1   17   4   1/3   2m7   57"
+      ],
+      "lyrics": [
+        "天天想你 天天守住一顆心 把我最好的愛留給你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-08",
+      "type": "instrument",
+      "label": "間奏後重複主歌與副歌",
+      "progression": "♭6maj7   ♭7add9   1sus2 | ♭6maj7   ♭7add9   57sus4   57",
+      "repeat": "×3"
+    },
+    {
+      "id": "section-09",
+      "type": "instrument",
+      "label": "尾聲",
+      "progression": "1   57"
+    },
+    {
+      "id": "section-10",
+      "type": "lyric",
+      "chords": [
+        "1   17   4   1/3   2m7   57"
+      ],
+      "lyrics": [
+        "天天想你 天天守住一顆心 把我最好的愛留給你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-11",
+      "type": "instrument",
+      "label": "尾奏",
+      "progression": "♭6maj7   ♭7add9   1sus2",
+      "repeat": "×2"
+    }
+  ]
+}

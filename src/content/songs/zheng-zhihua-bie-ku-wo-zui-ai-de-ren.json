@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "slug": "zheng-zhihua-bie-ku-wo-zui-ai-de-ren",
+  "title": "別哭我最愛的人",
+  "artist": "鄭智化",
+  "credits": {
+    "lyrics": "鄭智化",
+    "music": "鄭智化"
+  },
+  "original_key": "G♭",
+  "degree_key": "C",
+  "capo": 6,
+  "language": "zh-CN",
+  "tags": [
+    "华语",
+    "男声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/8224；原调/Capo：https://www.guitarworld.com.cn/pu/q54751"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "section-01",
+      "type": "lyric",
+      "chords": [
+        "1   6m   3m   6m"
+      ],
+      "lyrics": [
+        "别哭 我最爱的人 今夜我如昙花绽放"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-02",
+      "type": "lyric",
+      "chords": [
+        "4   6m   3m   4   5"
+      ],
+      "lyrics": [
+        "在最美的一霎那凋落 你的泪也挽不回的枯萎"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-03",
+      "type": "lyric",
+      "chords": [
+        "1   6m   3m   6m"
+      ],
+      "lyrics": [
+        "别哭 我最爱的人 可知我将不会再醒"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-04",
+      "type": "lyric",
+      "chords": [
+        "4   3m7   6m   4   5   1"
+      ],
+      "lyrics": [
+        "在最美的夜空中眨眼 我的眸是最闪亮的星光"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-05",
+      "type": "lyric",
+      "chords": [
+        "1   3m7   4   5"
+      ],
+      "lyrics": [
+        "是否记得我骄傲地说 这世界我曾经来过"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-06",
+      "type": "lyric",
+      "chords": [
+        "4   3m7   6m   4   5   1"
+      ],
+      "lyrics": [
+        "不要告诉我永恒是什么 我在最灿烂的瞬间毁灭"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-07",
+      "type": "lyric",
+      "chords": [
+        "1   5   4   5"
+      ],
+      "lyrics": [
+        "是否记得我骄傲地说 这世界我曾经来过"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-08",
+      "type": "lyric",
+      "chords": [
+        "4   3m7   4   1"
+      ],
+      "lyrics": [
+        "不要告诉我成熟是什么 我在刚开始的瞬间结束"
+      ],
+      "spacing": "normal"
+    }
+  ]
+}

@@ -45,7 +45,7 @@ const NOTE_INDEX: Record<string, number> = {
 
 const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11] as const;
 const DEGREE_PATTERN =
-  /([♭♯]?[1-7])(m\(maj7\)|m7♭5|m7|m6|sus4|m|\(7\)|7)?(?:\/([♭♯]?[1-7]))?/g;
+  /([♭♯]?[1-7])(m\(maj7\)|m7♭5|maj7|m11|m7|m6|7sus4|7sus2|sus4|sus2|add9|m|\(7\)|7|6)?(?:\/([♭♯]?[1-7]))?/g;
 
 function modulo(value: number, base: number): number {
   return ((value % base) + base) % base;

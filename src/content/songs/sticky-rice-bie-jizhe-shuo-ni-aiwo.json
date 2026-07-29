@@ -1,0 +1,376 @@
+{
+  "schema_version": 1,
+  "slug": "sticky-rice-bie-jizhe-shuo-ni-aiwo",
+  "title": "別急著說妳愛我到天長地久",
+  "artist": "Sticky Rice",
+  "credits": {
+    "lyrics": "馬念先",
+    "music": "馬念先"
+  },
+  "original_key": "C",
+  "degree_key": "C",
+  "capo": 0,
+  "language": "zh-TW",
+  "tags": [
+    "华语",
+    "乐队",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/28668；词曲：https://music-tw.line.me/track/3650764006"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "a-01",
+      "type": "instrument",
+      "label": "前奏 A",
+      "progression": "4maj7   5   3m   4maj7",
+      "repeat": "×3"
+    },
+    {
+      "id": "b-02",
+      "type": "instrument",
+      "label": "前奏 B",
+      "progression": "4maj7   5   6   6"
+    },
+    {
+      "id": "1-03",
+      "type": "lyric",
+      "chords": [
+        "4maj7   6m   5   3m"
+      ],
+      "lyrics": [
+        "朋友的朋友 認識不太久"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-04",
+      "type": "lyric",
+      "chords": [
+        "3m   4maj7"
+      ],
+      "lyrics": [
+        "在我們之間的話題不算太多"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-05",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5"
+      ],
+      "lyrics": [
+        "她熱情活潑 條件不錯"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-06",
+      "type": "lyric",
+      "chords": [
+        "3m   6   4maj7   5"
+      ],
+      "lyrics": [
+        "人群之中顯得我好沈默 whoa-oh"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-07",
+      "type": "lyric",
+      "chords": [
+        "3m   4maj7"
+      ],
+      "lyrics": [
+        "是我太害羞 還是社交經驗不夠"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-08",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m   4maj7"
+      ],
+      "lyrics": [
+        "我有一點心動 因為我單身太久"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-09",
+      "type": "lyric",
+      "chords": [
+        "4maj7   6m7"
+      ],
+      "lyrics": [
+        "她積極主動 打電話給我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-10",
+      "type": "lyric",
+      "chords": [
+        "5   6"
+      ],
+      "lyrics": [
+        "但我始終無法了解她的幽默"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-11",
+      "type": "lyric",
+      "chords": [
+        "4maj7   6m7"
+      ],
+      "lyrics": [
+        "她約我吃飯 找我喝酒"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-12",
+      "type": "lyric",
+      "chords": [
+        "5   6   6m   5"
+      ],
+      "lyrics": [
+        "要我陪她回家 然後跟她上樓 whoa-oh"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-13",
+      "type": "lyric",
+      "chords": [
+        "2m/6   4maj7"
+      ],
+      "lyrics": [
+        "迷濛的眼神讓我不知所措"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-14",
+      "type": "lyric",
+      "chords": [
+        "6m   5   3m7   6"
+      ],
+      "lyrics": [
+        "我無法接受 忍不住對她開口"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-15",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5"
+      ],
+      "lyrics": [
+        "別急著說妳愛我到天長地久"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-16",
+      "type": "lyric",
+      "chords": [
+        "3m7   6"
+      ],
+      "lyrics": [
+        "是妳喝醉牽住了我的手"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-17",
+      "type": "lyric",
+      "chords": [
+        "4maj7   3m7   6"
+      ],
+      "lyrics": [
+        "黑暗的角落 我根本沒有地方躲"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-18",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5"
+      ],
+      "lyrics": [
+        "別急著說妳愛我到天長地久"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-19",
+      "type": "lyric",
+      "chords": [
+        "3m7   6"
+      ],
+      "lyrics": [
+        "我只是順口稱讚了妳的狗"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-20",
+      "type": "lyric",
+      "chords": [
+        "4maj7   3m7   6"
+      ],
+      "lyrics": [
+        "對於妳的寵物 真的一點興趣都沒有 whoa"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-21",
+      "type": "lyric",
+      "chords": [
+        "4maj7   6m7"
+      ],
+      "lyrics": [
+        "幾個月過後 某一個週末"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-22",
+      "type": "lyric",
+      "chords": [
+        "5   6"
+      ],
+      "lyrics": [
+        "和她巧遇在我家樓下的巷口"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-23",
+      "type": "lyric",
+      "chords": [
+        "4maj7   6m7"
+      ],
+      "lyrics": [
+        "她依然主動 跑過來找我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-24",
+      "type": "lyric",
+      "chords": [
+        "5   67   4maj7   5"
+      ],
+      "lyrics": [
+        "要我陪她到附近公園去走一走 whoa-oh"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-25",
+      "type": "lyric",
+      "chords": [
+        "3m7   4maj7"
+      ],
+      "lyrics": [
+        "用她的笑容訴說她生活的寂寞"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-26",
+      "type": "lyric",
+      "chords": [
+        "6m   5   3m7   6"
+      ],
+      "lyrics": [
+        "我好想逃走 但就是想不出藉口 whoa-oh"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-27",
+      "type": "instrument",
+      "label": "间奏",
+      "progression": "4maj7   5   3m7   6"
+    },
+    {
+      "id": "section-28",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5"
+      ],
+      "lyrics": [
+        "別急著說妳愛我到天長地久"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-29",
+      "type": "lyric",
+      "chords": [
+        "3m7   6"
+      ],
+      "lyrics": [
+        "是妳喝醉牽住了我的手"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-30",
+      "type": "lyric",
+      "chords": [
+        "4maj7   3m7   6"
+      ],
+      "lyrics": [
+        "黑暗的角落 我根本沒有地方躲"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-31",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5"
+      ],
+      "lyrics": [
+        "別急著說妳愛我到天長地久"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-32",
+      "type": "lyric",
+      "chords": [
+        "3m7   6"
+      ],
+      "lyrics": [
+        "我只是順口稱讚了妳的狗"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-33",
+      "type": "lyric",
+      "chords": [
+        "4maj7   3m7   6"
+      ],
+      "lyrics": [
+        "對於妳的寵物 真的一點興趣都沒有 whoa"
+      ],
+      "spacing": "normal"
+    }
+  ]
+}

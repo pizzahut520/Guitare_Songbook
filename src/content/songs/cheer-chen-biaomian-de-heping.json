@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "slug": "cheer-chen-biaomian-de-heping",
+  "title": "表面的和平",
+  "artist": "Cheer Chen",
+  "credits": {
+    "lyrics": "陳綺貞",
+    "music": "陳綺貞"
+  },
+  "original_key": "F",
+  "degree_key": "F",
+  "capo": 0,
+  "language": "zh-TW",
+  "tags": [
+    "华语",
+    "女声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/11813；词曲：https://chord4.com/zh-hant/tabs/1018"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "section-01",
+      "type": "instrument",
+      "label": "前奏",
+      "progression": "2m7   5sus4   3m7   6sus4 | 2m7   4m7   5sus4   5"
+    },
+    {
+      "id": "1-02",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5   1"
+      ],
+      "lyrics": [
+        "我也無所謂 你說什麼都對"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-03",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5"
+      ],
+      "lyrics": [
+        "當我已經變成了 你零碎的時間"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-04",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5   1"
+      ],
+      "lyrics": [
+        "終於有機會 讓自己再沉澱"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-05",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5"
+      ],
+      "lyrics": [
+        "讓我回到過去 不再為你而分裂"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-06",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5   1"
+      ],
+      "lyrics": [
+        "我竟然如此 執著於星座配對"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-07",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5"
+      ],
+      "lyrics": [
+        "但是對我們的感覺 我比誰都要強烈"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-08",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "我曾經仔細聽 你說的大道理"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-09",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "我曾經認識你 像小孩的任性"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-10",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "我曾經凝視你 你眼睛裡的熱情"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-11",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   1"
+      ],
+      "lyrics": [
+        "小心不跌入 你流失的回憶"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-12",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5   1"
+      ],
+      "lyrics": [
+        "終於有機會 讓自己再沉澱"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-13",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5"
+      ],
+      "lyrics": [
+        "讓我回到過去 毫無恐懼的直言"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-14",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5   1"
+      ],
+      "lyrics": [
+        "是你太鬆懈 還是我一向太尖銳"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-15",
+      "type": "lyric",
+      "chords": [
+        "4   1/3   2m7   5"
+      ],
+      "lyrics": [
+        "當你不只一次脫口而出 曾是對別人的稱謂"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-16",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "我曾經仔細聽 你說的大道理"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-17",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "曾經小心翼翼 維持表面的和平"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-18",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "曾經認真反省 不唱昨日的歌曲"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-19",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   1"
+      ],
+      "lyrics": [
+        "小心不跌入 你流失的回憶"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-20",
+      "type": "instrument",
+      "label": "间奏",
+      "progression": "1   2m7   5sus4   3m7   6sus4 | 2m7   4m7   5sus4   67sus4"
+    },
+    {
+      "id": "3-21",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "我曾經仔細聽 你說的大道理"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-22",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "曾經小心翼翼 維持表面的和平"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-23",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   3m7   6sus4"
+      ],
+      "lyrics": [
+        "曾經認真反省 不唱昨日的歌曲"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-24",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   1"
+      ],
+      "lyrics": [
+        "小心不跌入 你流失的回憶"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-25",
+      "type": "lyric",
+      "chords": [
+        "4maj7   5   2m7"
+      ],
+      "lyrics": [
+        "為了不讓你傷心 傷了我的心"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-26",
+      "type": "instrument",
+      "label": "尾奏",
+      "progression": "2m7   5sus4   3m7   6sus4 | 2m7   4m7   5sus4   5   1"
+    }
+  ]
+}

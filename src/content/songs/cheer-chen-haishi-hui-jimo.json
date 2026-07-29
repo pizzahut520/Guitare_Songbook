@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "slug": "cheer-chen-haishi-hui-jimo",
+  "title": "還是會寂寞",
+  "artist": "Cheer Chen",
+  "credits": {
+    "lyrics": "陳綺貞",
+    "music": "陳綺貞"
+  },
+  "original_key": "G♭",
+  "degree_key": "F",
+  "capo": 1,
+  "language": "zh-TW",
+  "tags": [
+    "华语",
+    "女声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦与词曲：https://chord4.com/zh-hant/tabs/1009"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "1-01",
+      "type": "lyric",
+      "chords": [
+        "1   5   6m   3m"
+      ],
+      "lyrics": [
+        "早已忘了想你的滋味是什麼"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-02",
+      "type": "lyric",
+      "chords": [
+        "4   5   3m   6m"
+      ],
+      "lyrics": [
+        "因為每分每秒都被你佔據在心中"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-03",
+      "type": "lyric",
+      "chords": [
+        "2m   5   3m   6m"
+      ],
+      "lyrics": [
+        "你的一舉一動牽扯在我生活的隙縫"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-04",
+      "type": "lyric",
+      "chords": [
+        "4   4m   2m   5"
+      ],
+      "lyrics": [
+        "誰能告訴我 離開你的我 會有多自由"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-05",
+      "type": "lyric",
+      "chords": [
+        "1   5   6m   3m"
+      ],
+      "lyrics": [
+        "也曾想過躲進別人溫暖的懷中"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-06",
+      "type": "lyric",
+      "chords": [
+        "4   5   3m   6m"
+      ],
+      "lyrics": [
+        "可是這麼一來就一點意義也沒有"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-07",
+      "type": "lyric",
+      "chords": [
+        "2m   5   3m   6m"
+      ],
+      "lyrics": [
+        "我的高尚情操一直不斷提醒著我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-08",
+      "type": "lyric",
+      "chords": [
+        "4   4m   2m   5"
+      ],
+      "lyrics": [
+        "離開你的我 不論過多久 還是會寂寞"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-09",
+      "type": "lyric",
+      "chords": [
+        "6m"
+      ],
+      "lyrics": [
+        "別對我小心翼翼"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-10",
+      "type": "lyric",
+      "chords": [
+        "3m"
+      ],
+      "lyrics": [
+        "別讓我看輕你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-11",
+      "type": "lyric",
+      "chords": [
+        "4   5   1   5"
+      ],
+      "lyrics": [
+        "跟著我 勇敢的走下去"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-12",
+      "type": "lyric",
+      "chords": [
+        "6m"
+      ],
+      "lyrics": [
+        "別勸我回心轉意"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-13",
+      "type": "lyric",
+      "chords": [
+        "3m"
+      ],
+      "lyrics": [
+        "這不是廉價的愛情"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-14",
+      "type": "lyric",
+      "chords": [
+        "4   2m   4m   5"
+      ],
+      "lyrics": [
+        "看著我 對我說真愛我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-2-15",
+      "type": "instrument",
+      "label": "重複主歌 2 與橋段，最後再唱主歌 2",
+      "progression": "1   5"
+    }
+  ]
+}

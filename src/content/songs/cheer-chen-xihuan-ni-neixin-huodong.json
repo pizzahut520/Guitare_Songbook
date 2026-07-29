@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "slug": "cheer-chen-xihuan-ni-neixin-huodong",
+  "title": "我喜歡上你時的内心活動",
+  "artist": "Cheer Chen",
+  "credits": {
+    "lyrics": "韓寒",
+    "music": "陳光榮"
+  },
+  "original_key": "C",
+  "degree_key": "C",
+  "capo": 0,
+  "language": "zh-CN",
+  "tags": [
+    "华语",
+    "女声",
+    "电影原声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦与词曲：https://chord4.com/zh-hant/tabs/19178"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "section-01",
+      "type": "instrument",
+      "label": "前奏",
+      "progression": "1   1   1   1"
+    },
+    {
+      "id": "1-02",
+      "type": "lyric",
+      "chords": [
+        "1   5/7   4   4m"
+      ],
+      "lyrics": [
+        "在九月 潮湿的车厢 你看着车窗"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-03",
+      "type": "lyric",
+      "chords": [
+        "4   5   3m"
+      ],
+      "lyrics": [
+        "窗外它 水管在开花"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-04",
+      "type": "lyric",
+      "chords": [
+        "67   2m7   5   1"
+      ],
+      "lyrics": [
+        "椅子在异乡 树叶有翅膀"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-05",
+      "type": "lyric",
+      "chords": [
+        "4   5   3m"
+      ],
+      "lyrics": [
+        "上海的街道 雪山在边上"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-06",
+      "type": "lyric",
+      "chords": [
+        "67   2m7   5   4"
+      ],
+      "lyrics": [
+        "你靠着车窗 我心脏一旁"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-07",
+      "type": "lyric",
+      "chords": [
+        "1   4"
+      ],
+      "lyrics": [
+        "我们去哪 呜"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-08",
+      "type": "instrument",
+      "label": "間奏 1",
+      "progression": "1   5/7   6m   6m7/5   4   5   1sus4   1"
+    },
+    {
+      "id": "2-09",
+      "type": "lyric",
+      "chords": [
+        "1   5/7"
+      ],
+      "lyrics": [
+        "你看那 九点钟方向"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-10",
+      "type": "lyric",
+      "chords": [
+        "4   5"
+      ],
+      "lyrics": [
+        "日内瓦湖的房子 贵吗"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-11",
+      "type": "lyric",
+      "chords": [
+        "1   5/7"
+      ],
+      "lyrics": [
+        "世界上 七千个地方"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-12",
+      "type": "lyric",
+      "chords": [
+        "4   4m"
+      ],
+      "lyrics": [
+        "我们定居哪"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-13",
+      "type": "lyric",
+      "chords": [
+        "4   5   3m"
+      ],
+      "lyrics": [
+        "告诉我 答案是什么"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-14",
+      "type": "lyric",
+      "chords": [
+        "67   2m7   5   1"
+      ],
+      "lyrics": [
+        "你喜欢去哪 青海或三亚"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-15",
+      "type": "lyric",
+      "chords": [
+        "17   4   5   3m"
+      ],
+      "lyrics": [
+        "冰岛或希腊 南美不去吗"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-16",
+      "type": "lyric",
+      "chords": [
+        "67   2m7   5   4"
+      ],
+      "lyrics": [
+        "沙漠你爱吗 我问太多了"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-17",
+      "type": "instrument",
+      "label": "間奏 2",
+      "progression": "4   ♭3   2   ♭7   4   5   5"
+    },
+    {
+      "id": "3-18",
+      "type": "lyric",
+      "chords": [
+        "4   5   3m   6m"
+      ],
+      "lyrics": [
+        "知道吗 这里的雨季只有一两天"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-19",
+      "type": "lyric",
+      "chords": [
+        "2m7   3m   4   ♭6"
+      ],
+      "lyrics": [
+        "白昼很长 也很短 夜晚有三年"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-20",
+      "type": "lyric",
+      "chords": [
+        "4   5   3m"
+      ],
+      "lyrics": [
+        "知道吗 今天的消息"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-21",
+      "type": "lyric",
+      "chords": [
+        "67   2m7   5   1"
+      ],
+      "lyrics": [
+        "说一号公路上 那座桥断了"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-22",
+      "type": "lyric",
+      "chords": [
+        "17   4   5   3m"
+      ],
+      "lyrics": [
+        "我们还去吗 要不再说呢"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-23",
+      "type": "lyric",
+      "chords": [
+        "67   2m7   5   4"
+      ],
+      "lyrics": [
+        "会修一年吧 一年能等吗"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-24",
+      "type": "lyric",
+      "chords": [
+        "1   4"
+      ],
+      "lyrics": [
+        "你还去吗 呜"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "3-25",
+      "type": "lyric",
+      "chords": [
+        "1   4"
+      ],
+      "lyrics": [
+        "你喜欢吗"
+      ],
+      "spacing": "normal"
+    }
+  ]
+}

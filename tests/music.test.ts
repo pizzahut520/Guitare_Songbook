@@ -16,6 +16,12 @@ describe("degree notation", () => {
     expect(degreeToChord("6(7)", "C")).toBe("A7");
   });
 
+  it("keeps extended qualities together when showing chord names", () => {
+    expect(
+      degreeToChord("♭6maj7 ♭7add9 1sus2 57sus4 57 2m11", "D")
+    ).toBe("B♭maj7 Cadd9 Dsus2 A7sus4 A7 Em11");
+  });
+
   it("transposes chord names without changing degree data", () => {
     expect(degreeToChord("1 4 5", "C", 2)).toBe("D G A");
     expect(keyAtTranspose("C", 2)).toBe("D");

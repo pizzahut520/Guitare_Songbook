@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "slug": "zhang-zhenyue-baozhe-ni",
+  "title": "抱著你",
+  "artist": "Zhang Zhen Yue",
+  "credits": {
+    "lyrics": "張震嶽",
+    "music": "張震嶽"
+  },
+  "original_key": "G♭",
+  "degree_key": "E",
+  "capo": 2,
+  "language": "zh-TW",
+  "tags": [
+    "华语",
+    "男声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦编配：https://chord4.com/zh-hant/tabs/11302；词曲：https://www.mulanci.org/lyric/ta30736/"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "section-01",
+      "type": "lyric",
+      "chords": [
+        "1   2m11   1   1sus4   1"
+      ],
+      "lyrics": [
+        "如果明天 看不見太陽"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-02",
+      "type": "lyric",
+      "chords": [
+        "1   2m11   5sus4   5"
+      ],
+      "lyrics": [
+        "整個世界 會變成怎樣"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-03",
+      "type": "lyric",
+      "chords": [
+        "1   17   4add9   4add9"
+      ],
+      "lyrics": [
+        "在最後這一刻 讓我緊緊抱你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-04",
+      "type": "lyric",
+      "chords": [
+        "1   5sus4   4add9"
+      ],
+      "lyrics": [
+        "抱著你 抱著你 抱著你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-05",
+      "type": "lyric",
+      "chords": [
+        "1   2m11   1   1sus4   1"
+      ],
+      "lyrics": [
+        "如果生命 果真是無常"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-06",
+      "type": "lyric",
+      "chords": [
+        "1   2m11   5sus4   5"
+      ],
+      "lyrics": [
+        "我願坦然 面對而不慌"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-07",
+      "type": "lyric",
+      "chords": [
+        "1   17   4add9   4add9"
+      ],
+      "lyrics": [
+        "有你在我身旁 有你給我力量"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-08",
+      "type": "lyric",
+      "chords": [
+        "1   5sus4   4add9"
+      ],
+      "lyrics": [
+        "抱著你 抱著你 抱著你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-09",
+      "type": "lyric",
+      "chords": [
+        "1   2m11   1   1sus4   1"
+      ],
+      "lyrics": [
+        "你的眼神 充滿愛和光"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-10",
+      "type": "lyric",
+      "chords": [
+        "1   2m11   5sus4   5"
+      ],
+      "lyrics": [
+        "讓我不畏懼 明天黑暗"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-11",
+      "type": "lyric",
+      "chords": [
+        "1   17   4add9   4add9"
+      ],
+      "lyrics": [
+        "煩惱憂愁悲傷 一切都不重要"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-12",
+      "type": "lyric",
+      "chords": [
+        "1   5sus4   4add9"
+      ],
+      "lyrics": [
+        "抱著你 抱著你 抱著你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-13",
+      "type": "lyric",
+      "chords": [
+        "2m11   5sus4   1   1sus4   1   1"
+      ],
+      "lyrics": [
+        "我只要抱著你 抱著你 抱著你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "a-14",
+      "type": "instrument",
+      "label": "間奏 A",
+      "progression": "4add9   5sus4   1maj7   1maj7",
+      "repeat": "×2"
+    },
+    {
+      "id": "b-15",
+      "type": "instrument",
+      "label": "間奏 B／重複主歌",
+      "progression": "4add9   5sus4   6m   6m7 | 4add9   5sus4   1   1sus4   1   1"
+    }
+  ]
+}

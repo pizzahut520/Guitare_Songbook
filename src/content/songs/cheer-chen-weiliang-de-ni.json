@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "slug": "cheer-chen-weiliang-de-ni",
+  "title": "微涼的你",
+  "artist": "Cheer Chen",
+  "credits": {
+    "lyrics": "陳綺貞",
+    "music": "陳綺貞"
+  },
+  "original_key": "E♭",
+  "degree_key": "D",
+  "capo": 1,
+  "language": "zh-CN",
+  "tags": [
+    "华语",
+    "女声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦：https://chord4.com/zh-hant/tabs/1484；词曲：https://music-tw.line.me/track/1017691002"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "section-01",
+      "type": "lyric",
+      "chords": [
+        "1maj7"
+      ],
+      "lyrics": [
+        "迎着微微的风 像微微的你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-02",
+      "type": "lyric",
+      "chords": [
+        "1   4"
+      ],
+      "lyrics": [
+        "在我不经意的时候 掀起一阵涟漪"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-03",
+      "type": "lyric",
+      "chords": [
+        "1maj7"
+      ],
+      "lyrics": [
+        "躲着凉凉的雨 像凉凉的你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-04",
+      "type": "lyric",
+      "chords": [
+        "1   4"
+      ],
+      "lyrics": [
+        "偶尔捎来消息 将我整天灼热的思绪抚平"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-05",
+      "type": "lyric",
+      "chords": [
+        "4"
+      ],
+      "lyrics": [
+        "在夜里 在黎明"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-06",
+      "type": "lyric",
+      "chords": [
+        "4   5"
+      ],
+      "lyrics": [
+        "融化我凝结的心"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-07",
+      "type": "lyric",
+      "chords": [
+        "1"
+      ],
+      "lyrics": [
+        "拥抱一阵微凉的风"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-08",
+      "type": "lyric",
+      "chords": [
+        "1"
+      ],
+      "lyrics": [
+        "心的空隙任你来去"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-09",
+      "type": "lyric",
+      "chords": [
+        "4"
+      ],
+      "lyrics": [
+        "我睁大了眼睛"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-10",
+      "type": "lyric",
+      "chords": [
+        "5"
+      ],
+      "lyrics": [
+        "找寻不到你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-11",
+      "type": "lyric",
+      "chords": [
+        "1"
+      ],
+      "lyrics": [
+        "飘散的发留住了你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-12",
+      "type": "lyric",
+      "chords": [
+        "1   3m   6m"
+      ],
+      "lyrics": [
+        "微笑的脸却来不及温习你的吻"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-13",
+      "type": "lyric",
+      "chords": [
+        "46   4m   1"
+      ],
+      "lyrics": [
+        "回忆才是你唯一的痕迹"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-14",
+      "type": "instrument",
+      "label": "重複自「躲着凉凉的雨」，副歌再唱一次",
+      "progression": "1"
+    }
+  ]
+}

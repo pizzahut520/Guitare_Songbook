@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "slug": "cheer-chen-tai-congming",
+  "title": "太聰明",
+  "artist": "Cheer Chen",
+  "credits": {
+    "lyrics": "陳綺貞",
+    "music": "陳綺貞"
+  },
+  "original_key": "E",
+  "degree_key": "E",
+  "capo": 0,
+  "language": "zh-TW",
+  "tags": [
+    "华语",
+    "女声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦与词曲：https://chord4.com/zh-hant/tabs/1001"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "1-01",
+      "type": "lyric",
+      "chords": [
+        "1"
+      ],
+      "lyrics": [
+        "總以為謎一般難懂的我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-02",
+      "type": "lyric",
+      "chords": [
+        "6m   3m"
+      ],
+      "lyrics": [
+        "在你了解了以後 其實也沒什麼"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-03",
+      "type": "lyric",
+      "chords": [
+        "4   6m"
+      ],
+      "lyrics": [
+        "我總是忽冷又忽熱 隱藏我的感受"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-04",
+      "type": "lyric",
+      "chords": [
+        "4   5   1"
+      ],
+      "lyrics": [
+        "只是怕 愛你的心被你看透"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-05",
+      "type": "lyric",
+      "chords": [
+        "1"
+      ],
+      "lyrics": [
+        "猜的沒錯 想得太多不會有結果"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-06",
+      "type": "lyric",
+      "chords": [
+        "6m   3m"
+      ],
+      "lyrics": [
+        "被你看穿了以後 我更無處可躲"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-07",
+      "type": "lyric",
+      "chords": [
+        "4   6m"
+      ],
+      "lyrics": [
+        "我開始後悔 不應該太聰明的賣弄"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-08",
+      "type": "lyric",
+      "chords": [
+        "4   5   1"
+      ],
+      "lyrics": [
+        "只是怕親手將我的真心葬送"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-09",
+      "type": "lyric",
+      "chords": [
+        "6m"
+      ],
+      "lyrics": [
+        "我猜著你的心 要再一次確定"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-10",
+      "type": "lyric",
+      "chords": [
+        "3m"
+      ],
+      "lyrics": [
+        "遙遠的距離都是因為太過聰明"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-11",
+      "type": "lyric",
+      "chords": [
+        "2m"
+      ],
+      "lyrics": [
+        "要猜著你的心 要再一次確定"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-12",
+      "type": "lyric",
+      "chords": [
+        "4   5"
+      ],
+      "lyrics": [
+        "混亂的思緒都是因為太想靠近你"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-13",
+      "type": "lyric",
+      "chords": [
+        "4   5   1"
+      ],
+      "lyrics": [
+        "只是怕親手將我的真心葬送"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-14",
+      "type": "lyric",
+      "chords": [
+        "2m   6m"
+      ],
+      "lyrics": [
+        "我開始後悔 不應該太聰明的賣弄"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-15",
+      "type": "lyric",
+      "chords": [
+        "4   5   1"
+      ],
+      "lyrics": [
+        "只是怕親手將我的真心葬送"
+      ],
+      "spacing": "normal"
+    }
+  ]
+}

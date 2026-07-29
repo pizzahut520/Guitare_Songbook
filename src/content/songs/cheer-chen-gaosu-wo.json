@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "slug": "cheer-chen-gaosu-wo",
+  "title": "告訴我",
+  "artist": "Cheer Chen",
+  "credits": {
+    "lyrics": "陳綺貞",
+    "music": "陳綺貞"
+  },
+  "original_key": "C",
+  "degree_key": "C",
+  "capo": 0,
+  "language": "zh-CN",
+  "tags": [
+    "华语",
+    "女声",
+    "弹唱",
+    "级数谱"
+  ],
+  "source": {
+    "type": "user_text",
+    "reference": "用户文本；和弦：https://chord4.com/zh-hant/tabs/10208；词曲：https://music-tw.line.me/track/1017128006"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "1-01",
+      "type": "lyric",
+      "chords": [
+        "1   5m"
+      ],
+      "lyrics": [
+        "看沉默的电话 它什么都不说"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-02",
+      "type": "lyric",
+      "chords": [
+        "2m   6m"
+      ],
+      "lyrics": [
+        "看电视的画面 它无声的闪动"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-03",
+      "type": "lyric",
+      "chords": [
+        "4   3m   6m"
+      ],
+      "lyrics": [
+        "看街上的行人 跟我擦肩而过"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "1-04",
+      "type": "lyric",
+      "chords": [
+        "4   4m   5"
+      ],
+      "lyrics": [
+        "整个世界太冷漠 我没有力气再往前走"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-05",
+      "type": "lyric",
+      "chords": [
+        "1   5m"
+      ],
+      "lyrics": [
+        "看你紧闭的嘴唇 它什么都不说"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-06",
+      "type": "lyric",
+      "chords": [
+        "2m   6m"
+      ],
+      "lyrics": [
+        "看你飘忽的眼神 它无情的闪躲"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-07",
+      "type": "lyric",
+      "chords": [
+        "4   3m   6m"
+      ],
+      "lyrics": [
+        "看你和我的回忆 跟我擦肩而过"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "2-08",
+      "type": "lyric",
+      "chords": [
+        "4   4m   5"
+      ],
+      "lyrics": [
+        "你的改变太冷漠 我没有勇气大声地说"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-09",
+      "type": "lyric",
+      "chords": [
+        "1   3m   6m"
+      ],
+      "lyrics": [
+        "告诉我 你不是真的离开我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-10",
+      "type": "lyric",
+      "chords": [
+        "3m   6m   4   5"
+      ],
+      "lyrics": [
+        "你也不愿这样的夜里 把难过留给我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-11",
+      "type": "lyric",
+      "chords": [
+        "1   3m   6m"
+      ],
+      "lyrics": [
+        "告诉我 你不是真的离开我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-12",
+      "type": "lyric",
+      "chords": [
+        "3m   6m   4   5   1"
+      ],
+      "lyrics": [
+        "你是要惩罚我的爱 让你失去自由 告诉我"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "section-13",
+      "type": "instrument",
+      "label": "重複全曲，最後副歌再唱一次",
+      "progression": "1"
+    }
+  ]
+}

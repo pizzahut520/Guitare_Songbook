@@ -7,12 +7,10 @@ const HEADER_PATTERN =
   /^(歌名|专辑|專輯|艺人|藝人|原调|原調|Capo)：\s*(.*)$/i;
 const KEY_PATTERN = /^\s*Key\s*[=:]\s*([A-G](?:#|b|♯|♭)?)\s*$/i;
 const TEMPLATE_INSTRUCTION = /^填写方式：|^填寫方式：/;
-const TEMPLATE_SECTION =
-  /^\[(?:前奏|主歌\s*\d*|副歌|间奏|間奏|尾奏)\]\s*$/i;
 const SECTION_PATTERN =
   /^\s*(?:\[([^\]]+)\]|(前奏|主歌\s*\d*|副歌|间奏|間奏|桥段|橋段|尾奏|intro|verse\s*\d*|chorus|bridge|interlude|outro)\s*[:：])\s*$/i;
 const CHORD_PATTERN =
-  /^[A-G](?:#|b|♯|♭)?(?:(?:maj|min|dim|aug|sus|add|m)\d*|\d+)?(?:\([^)]*\))?(?:\/[A-G](?:#|b|♯|♭)?)?$/i;
+  /^[A-G](?:#|b|♯|♭)?(?:(?:maj|min|dim|aug|sus|add|m)\d*|\d+)*(?:\([^)]*\))?(?:\/[A-G](?:#|b|♯|♭)?)?$/i;
 const DEGREE_NAMES = [
   "1",
   "♭2",
@@ -262,13 +260,13 @@ export function parseChordBlocks(lines, key) {
 }
 
 export function compactRepeatedLyricBlocks(blocks) {
-  const seen = new Set();
   const compacted = [];
   let removed = 0;
+  let previousSignature = null;
 
   for (const block of blocks) {
     if (block.type === "instrument") {
-      seen.clear();
+      previousSignature = null;
       compacted.push(block);
       continue;
     }
@@ -278,11 +276,11 @@ export function compactRepeatedLyricBlocks(blocks) {
       lyrics: block.lyrics,
       lyric_sets: block.lyric_sets
     });
-    if (seen.has(signature)) {
+    if (previousSignature === signature) {
       removed++;
       continue;
     }
-    seen.add(signature);
+    previousSignature = signature;
     compacted.push(block);
   }
 
@@ -314,8 +312,7 @@ function bodyFromLines(lines) {
   return lines.filter(
     (line) =>
       !HEADER_PATTERN.test(line) &&
-      !TEMPLATE_INSTRUCTION.test(line.trim()) &&
-      !TEMPLATE_SECTION.test(line.trim())
+      !TEMPLATE_INSTRUCTION.test(line.trim())
   );
 }
 
@@ -368,7 +365,7 @@ async function parseTextFile(filePath) {
   };
 }
 
-function songFromParsed(parsed, override) {
+export function songFromParsed(parsed, override) {
   const parsedBlocks = parseChordBlocks(parsed.body ?? [], parsed.originalKey);
   const warnings = [...parsedBlocks.warnings];
   if (!override) {
@@ -389,14 +386,16 @@ function songFromParsed(parsed, override) {
       title: parsed.title,
       artist: parsed.artist,
       credits: override.credits,
-      original_key: parsed.originalKey,
-      degree_key: parsed.originalKey,
-      capo: Number.parseInt(parsed.capo || "0", 10) || 0,
+      original_key: override.original_key ?? parsed.originalKey,
+      degree_key: override.degree_key ?? parsed.originalKey,
+      capo:
+        override.capo ??
+        (Number.parseInt(parsed.capo || "0", 10) || 0),
       language: override.language,
       tags: override.tags,
       source: {
         type: "user_text",
-        reference: parsed.file
+        reference: override.source_reference ?? parsed.file
       },
       copyright_status: "private_reference",
       blocks: parsedBlocks.blocks
