@@ -29,10 +29,19 @@
       "chords": [
         "1   5   6m   3m"
       ],
-      "lyrics": [
-        "早已忘了想你的滋味是什麼"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "早已忘了想你的滋味是什麼"
+        ],
+        [
+          "也曾想過躲進別人溫暖的懷中"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-02",
@@ -40,10 +49,19 @@
       "chords": [
         "4   5   3m   6m"
       ],
-      "lyrics": [
-        "因為每分每秒都被你佔據在心中"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "因為每分每秒都被你佔據在心中"
+        ],
+        [
+          "可是這麼一來就一點意義也沒有"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-03",
@@ -51,10 +69,19 @@
       "chords": [
         "2m   5   3m   6m"
       ],
-      "lyrics": [
-        "你的一舉一動牽扯在我生活的隙縫"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "你的一舉一動牽扯在我生活的隙縫"
+        ],
+        [
+          "我的高尚情操一直不斷提醒著我"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-04",
@@ -62,54 +89,19 @@
       "chords": [
         "4   4m   2m   5"
       ],
-      "lyrics": [
-        "誰能告訴我 離開你的我 會有多自由"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "誰能告訴我 離開你的我 會有多自由"
+        ],
+        [
+          "離開你的我 不論過多久 還是會寂寞"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-05",
-      "type": "lyric",
-      "chords": [
-        "1   5   6m   3m"
-      ],
-      "lyrics": [
-        "也曾想過躲進別人溫暖的懷中"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-06",
-      "type": "lyric",
-      "chords": [
-        "4   5   3m   6m"
-      ],
-      "lyrics": [
-        "可是這麼一來就一點意義也沒有"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-07",
-      "type": "lyric",
-      "chords": [
-        "2m   5   3m   6m"
-      ],
-      "lyrics": [
-        "我的高尚情操一直不斷提醒著我"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-08",
-      "type": "lyric",
-      "chords": [
-        "4   4m   2m   5"
-      ],
-      "lyrics": [
-        "離開你的我 不論過多久 還是會寂寞"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-09",

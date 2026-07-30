@@ -151,10 +151,19 @@
       "chords": [
         "1   1/3   4sus4   4"
       ],
-      "lyrics": [
-        "我坐在椅子上 看日出復活"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我坐在椅子上 看日出復活"
+        ],
+        [
+          "我摘下一片葉子 讓它代替我"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "2-14",
@@ -162,32 +171,19 @@
       "chords": [
         "2m7   5   1"
       ],
-      "lyrics": [
-        "我坐在夕陽裡 看城市的衰弱"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我坐在夕陽裡 看城市的衰弱"
+        ],
+        [
+          "觀察離開後的變化"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-15",
-      "type": "lyric",
-      "chords": [
-        "1   1/3   4sus4   4"
-      ],
-      "lyrics": [
-        "我摘下一片葉子 讓它代替我"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-16",
-      "type": "lyric",
-      "chords": [
-        "2m7   5   1"
-      ],
-      "lyrics": [
-        "觀察離開後的變化"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "2-17",

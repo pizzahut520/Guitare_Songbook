@@ -29,10 +29,19 @@
       "chords": [
         "1"
       ],
-      "lyrics": [
-        "總以為謎一般難懂的我"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "總以為謎一般難懂的我"
+        ],
+        [
+          "猜的沒錯 想得太多不會有結果"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-02",
@@ -40,10 +49,19 @@
       "chords": [
         "6m   3m"
       ],
-      "lyrics": [
-        "在你了解了以後 其實也沒什麼"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "在你了解了以後 其實也沒什麼"
+        ],
+        [
+          "被你看穿了以後 我更無處可躲"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-03",
@@ -51,10 +69,19 @@
       "chords": [
         "4   6m"
       ],
-      "lyrics": [
-        "我總是忽冷又忽熱 隱藏我的感受"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我總是忽冷又忽熱 隱藏我的感受"
+        ],
+        [
+          "我開始後悔 不應該太聰明的賣弄"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-04",
@@ -62,54 +89,19 @@
       "chords": [
         "4   5   1"
       ],
-      "lyrics": [
-        "只是怕 愛你的心被你看透"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "只是怕 愛你的心被你看透"
+        ],
+        [
+          "只是怕親手將我的真心葬送"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-05",
-      "type": "lyric",
-      "chords": [
-        "1"
-      ],
-      "lyrics": [
-        "猜的沒錯 想得太多不會有結果"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-06",
-      "type": "lyric",
-      "chords": [
-        "6m   3m"
-      ],
-      "lyrics": [
-        "被你看穿了以後 我更無處可躲"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-07",
-      "type": "lyric",
-      "chords": [
-        "4   6m"
-      ],
-      "lyrics": [
-        "我開始後悔 不應該太聰明的賣弄"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-08",
-      "type": "lyric",
-      "chords": [
-        "4   5   1"
-      ],
-      "lyrics": [
-        "只是怕親手將我的真心葬送"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-09",

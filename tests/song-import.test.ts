@@ -8,6 +8,7 @@ import {
   parseChordBlocks,
   songFromParsed
 } from "../scripts/import-song-texts.mjs";
+import { findVariantCandidates } from "../scripts/review-song-variants.mjs";
 
 describe("song text importer", () => {
   it("recognizes chord rows without mistaking prose for chords", () => {
@@ -152,5 +153,29 @@ describe("song text importer", () => {
       source: { reference: "核对来源" },
       blocks: [{ chords: ["1   4"] }]
     });
+  });
+
+  it("finds only adjacent repeated chord sections for variant review", () => {
+    const song = {
+      slug: "test-song",
+      title: "测试歌曲",
+      blocks: [
+        { type: "lyric", chords: ["1"], lyrics: ["A1"] },
+        { type: "lyric", chords: ["4"], lyrics: ["A2"] },
+        { type: "lyric", chords: ["1"], lyrics: ["B1"] },
+        { type: "lyric", chords: ["4"], lyrics: ["B2"] },
+        { type: "instrument", label: "间奏", progression: "1" },
+        { type: "lyric", chords: ["1"], lyrics: ["远处副歌"] },
+        { type: "lyric", chords: ["4"], lyrics: ["不应合并"] }
+      ]
+    };
+
+    expect(findVariantCandidates(song)).toEqual([
+      expect.objectContaining({
+        first_start: 0,
+        second_start: 2,
+        block_count: 2
+      })
+    ]);
   });
 });

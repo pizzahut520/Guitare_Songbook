@@ -29,10 +29,19 @@
       "chords": [
         "1   2m11   1   1sus4   1"
       ],
-      "lyrics": [
-        "如果明天 看不見太陽"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "如果明天 看不見太陽"
+        ],
+        [
+          "如果生命 果真是無常"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-02",
@@ -40,10 +49,19 @@
       "chords": [
         "1   2m11   5sus4   5"
       ],
-      "lyrics": [
-        "整個世界 會變成怎樣"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "整個世界 會變成怎樣"
+        ],
+        [
+          "我願坦然 面對而不慌"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-03",
@@ -51,10 +69,19 @@
       "chords": [
         "1   17   4add9   4add9"
       ],
-      "lyrics": [
-        "在最後這一刻 讓我緊緊抱你"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "在最後這一刻 讓我緊緊抱你"
+        ],
+        [
+          "有你在我身旁 有你給我力量"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-04",
@@ -62,54 +89,19 @@
       "chords": [
         "1   5sus4   4add9"
       ],
-      "lyrics": [
-        "抱著你 抱著你 抱著你"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "抱著你 抱著你 抱著你"
+        ],
+        [
+          "抱著你 抱著你 抱著你"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-05",
-      "type": "lyric",
-      "chords": [
-        "1   2m11   1   1sus4   1"
-      ],
-      "lyrics": [
-        "如果生命 果真是無常"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-06",
-      "type": "lyric",
-      "chords": [
-        "1   2m11   5sus4   5"
-      ],
-      "lyrics": [
-        "我願坦然 面對而不慌"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-07",
-      "type": "lyric",
-      "chords": [
-        "1   17   4add9   4add9"
-      ],
-      "lyrics": [
-        "有你在我身旁 有你給我力量"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-08",
-      "type": "lyric",
-      "chords": [
-        "1   5sus4   4add9"
-      ],
-      "lyrics": [
-        "抱著你 抱著你 抱著你"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-09",

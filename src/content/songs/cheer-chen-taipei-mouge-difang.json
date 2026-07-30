@@ -29,10 +29,19 @@
       "chords": [
         "1   6m"
       ],
-      "lyrics": [
-        "曬乾你的襯衫 收起你的餐盤"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "曬乾你的襯衫 收起你的餐盤"
+        ],
+        [
+          "你最愛的角落 便利商店的霓虹"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-02",
@@ -40,10 +49,19 @@
       "chords": [
         "4   5"
       ],
-      "lyrics": [
-        "呼吸這個早晨你留下的味道"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "呼吸這個早晨你留下的味道"
+        ],
+        [
+          "高樓大廈擋住守護我的星座"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-03",
@@ -51,10 +69,19 @@
       "chords": [
         "1   6m"
       ],
-      "lyrics": [
-        "清晨第一班列車 開往同一個地方"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "清晨第一班列車 開往同一個地方"
+        ],
+        [
+          "當愛寫成了小說 開始就決定結果"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-04",
@@ -62,10 +89,19 @@
       "chords": [
         "4   5"
       ],
-      "lyrics": [
-        "那一次你離開我 就不再回來"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "那一次你離開我 就不再回來"
+        ],
+        [
+          "多年以後見到你將擦身而過"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-05",
@@ -73,10 +109,19 @@
       "chords": [
         "3   6   6"
       ],
-      "lyrics": [
-        "沙漠裡的收音機"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "沙漠裡的收音機"
+        ],
+        [
+          "沙漠裡的收音機"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-06",
@@ -84,10 +129,19 @@
       "chords": [
         "4   5"
       ],
-      "lyrics": [
-        "接收不到你的頻率"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "接收不到你的頻率"
+        ],
+        [
+          "接收不到我的訊息"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-07",
@@ -95,10 +149,19 @@
       "chords": [
         "1   6m"
       ],
-      "lyrics": [
-        "有人在嗎 我一個人唱著"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "有人在嗎 我一個人唱著"
+        ],
+        [
+          "有人在嗎 我一個人唱著"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-08",
@@ -106,10 +169,19 @@
       "chords": [
         "4   57   5"
       ],
-      "lyrics": [
-        "有人在嗎 我自問也自答"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "有人在嗎 我自問也自答"
+        ],
+        [
+          "有人在嗎 我自問也自答"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-09",
@@ -117,10 +189,19 @@
       "chords": [
         "1   6m"
       ],
-      "lyrics": [
-        "有人在嗎 明明是我們的家"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "有人在嗎 明明是我們的家"
+        ],
+        [
+          "有人在嗎 台北的某個地方"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-10",
@@ -128,120 +209,19 @@
       "chords": [
         "4   5   1"
       ],
-      "lyrics": [
-        "為何聽不見你的回答"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "為何聽不見你的回答"
+        ],
+        [
+          "為何聽不見你的回答"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-11",
-      "type": "lyric",
-      "chords": [
-        "1   6m"
-      ],
-      "lyrics": [
-        "你最愛的角落 便利商店的霓虹"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-12",
-      "type": "lyric",
-      "chords": [
-        "4   5"
-      ],
-      "lyrics": [
-        "高樓大廈擋住守護我的星座"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-13",
-      "type": "lyric",
-      "chords": [
-        "1   6m"
-      ],
-      "lyrics": [
-        "當愛寫成了小說 開始就決定結果"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-14",
-      "type": "lyric",
-      "chords": [
-        "4   5"
-      ],
-      "lyrics": [
-        "多年以後見到你將擦身而過"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-15",
-      "type": "lyric",
-      "chords": [
-        "3   6   6"
-      ],
-      "lyrics": [
-        "沙漠裡的收音機"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-16",
-      "type": "lyric",
-      "chords": [
-        "4   5"
-      ],
-      "lyrics": [
-        "接收不到我的訊息"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-17",
-      "type": "lyric",
-      "chords": [
-        "1   6m"
-      ],
-      "lyrics": [
-        "有人在嗎 我一個人唱著"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-18",
-      "type": "lyric",
-      "chords": [
-        "4   57   5"
-      ],
-      "lyrics": [
-        "有人在嗎 我自問也自答"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-19",
-      "type": "lyric",
-      "chords": [
-        "1   6m"
-      ],
-      "lyrics": [
-        "有人在嗎 台北的某個地方"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-20",
-      "type": "lyric",
-      "chords": [
-        "4   5   1"
-      ],
-      "lyrics": [
-        "為何聽不見你的回答"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-21",
@@ -288,10 +268,19 @@
       "chords": [
         "4   5   1"
       ],
-      "lyrics": [
-        "為何聽不見你的回答"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "為何聽不見你的回答"
+        ],
+        [
+          "再也聽不見你的回答"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-26",
@@ -299,32 +288,19 @@
       "chords": [
         "6m   5"
       ],
-      "lyrics": [
-        "心裡的某個地方"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "心裡的某個地方"
+        ],
+        [
+          "台北的某個地方"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-27",
-      "type": "lyric",
-      "chords": [
-        "4   5   1"
-      ],
-      "lyrics": [
-        "再也聽不見你的回答"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-28",
-      "type": "lyric",
-      "chords": [
-        "6m   5"
-      ],
-      "lyrics": [
-        "台北的某個地方"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-29",

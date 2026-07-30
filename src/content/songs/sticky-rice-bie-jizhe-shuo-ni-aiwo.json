@@ -174,10 +174,19 @@
       "chords": [
         "4maj7   5"
       ],
-      "lyrics": [
-        "別急著說妳愛我到天長地久"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "別急著說妳愛我到天長地久"
+        ],
+        [
+          "別急著說妳愛我到天長地久"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-16",
@@ -185,10 +194,19 @@
       "chords": [
         "3m7   6"
       ],
-      "lyrics": [
-        "是妳喝醉牽住了我的手"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "是妳喝醉牽住了我的手"
+        ],
+        [
+          "我只是順口稱讚了妳的狗"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-17",
@@ -196,43 +214,19 @@
       "chords": [
         "4maj7   3m7   6"
       ],
-      "lyrics": [
-        "黑暗的角落 我根本沒有地方躲"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "黑暗的角落 我根本沒有地方躲"
+        ],
+        [
+          "對於妳的寵物 真的一點興趣都沒有 whoa"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-18",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5"
-      ],
-      "lyrics": [
-        "別急著說妳愛我到天長地久"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-19",
-      "type": "lyric",
-      "chords": [
-        "3m7   6"
-      ],
-      "lyrics": [
-        "我只是順口稱讚了妳的狗"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-20",
-      "type": "lyric",
-      "chords": [
-        "4maj7   3m7   6"
-      ],
-      "lyrics": [
-        "對於妳的寵物 真的一點興趣都沒有 whoa"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "3-21",
@@ -312,10 +306,19 @@
       "chords": [
         "4maj7   5"
       ],
-      "lyrics": [
-        "別急著說妳愛我到天長地久"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "別急著說妳愛我到天長地久"
+        ],
+        [
+          "別急著說妳愛我到天長地久"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-29",
@@ -323,10 +326,19 @@
       "chords": [
         "3m7   6"
       ],
-      "lyrics": [
-        "是妳喝醉牽住了我的手"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "是妳喝醉牽住了我的手"
+        ],
+        [
+          "我只是順口稱讚了妳的狗"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-30",
@@ -334,43 +346,19 @@
       "chords": [
         "4maj7   3m7   6"
       ],
-      "lyrics": [
-        "黑暗的角落 我根本沒有地方躲"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "黑暗的角落 我根本沒有地方躲"
+        ],
+        [
+          "對於妳的寵物 真的一點興趣都沒有 whoa"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-31",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5"
-      ],
-      "lyrics": [
-        "別急著說妳愛我到天長地久"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-32",
-      "type": "lyric",
-      "chords": [
-        "3m7   6"
-      ],
-      "lyrics": [
-        "我只是順口稱讚了妳的狗"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-33",
-      "type": "lyric",
-      "chords": [
-        "4maj7   3m7   6"
-      ],
-      "lyrics": [
-        "對於妳的寵物 真的一點興趣都沒有 whoa"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     }
   ]
 }

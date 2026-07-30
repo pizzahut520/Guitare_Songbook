@@ -196,10 +196,19 @@
       "chords": [
         "4maj7   5"
       ],
-      "lyrics": [
-        "我知道 那些夏天"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我知道 那些夏天"
+        ],
+        [
+          "我知道 那些夏天"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "2-18",
@@ -207,10 +216,19 @@
       "chords": [
         "6m   5"
       ],
-      "lyrics": [
-        "就像青春一样回不来"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "就像青春一样回不来"
+        ],
+        [
+          "就像你一样回不来"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "2-19",
@@ -218,10 +236,19 @@
       "chords": [
         "4maj7   5   1"
       ],
-      "lyrics": [
-        "代替梦想的也只能是勉为其难"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "代替梦想的也只能是勉为其难"
+        ],
+        [
+          "我也不会再对谁满怀期待"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "2-20",
@@ -229,10 +256,19 @@
       "chords": [
         "4maj7   5"
       ],
-      "lyrics": [
-        "我知道 吹过的牛逼"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我知道 吹过的牛逼"
+        ],
+        [
+          "我知道 这个世界"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "2-21",
@@ -240,10 +276,19 @@
       "chords": [
         "6m   5"
       ],
-      "lyrics": [
-        "也会随青春一笑了之"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "也会随青春一笑了之"
+        ],
+        [
+          "每天都有太多遗憾"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "2-22",
@@ -251,76 +296,19 @@
       "chords": [
         "4maj7   5   6m"
       ],
-      "lyrics": [
-        "让我困在城市里 纪念你"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "让我困在城市里 纪念你"
+        ],
+        [
+          "所以你好 再见"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "3-23",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5"
-      ],
-      "lyrics": [
-        "我知道 那些夏天"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "3-24",
-      "type": "lyric",
-      "chords": [
-        "6m   5"
-      ],
-      "lyrics": [
-        "就像你一样回不来"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "3-25",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5   1"
-      ],
-      "lyrics": [
-        "我也不会再对谁满怀期待"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "3-26",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5"
-      ],
-      "lyrics": [
-        "我知道 这个世界"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "3-27",
-      "type": "lyric",
-      "chords": [
-        "6m   5"
-      ],
-      "lyrics": [
-        "每天都有太多遗憾"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "3-28",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5   6m"
-      ],
-      "lyrics": [
-        "所以你好 再见"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-29",

@@ -29,10 +29,19 @@
       "chords": [
         "1maj7"
       ],
-      "lyrics": [
-        "迎着微微的风 像微微的你"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "迎着微微的风 像微微的你"
+        ],
+        [
+          "躲着凉凉的雨 像凉凉的你"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-02",
@@ -40,32 +49,19 @@
       "chords": [
         "1   4"
       ],
-      "lyrics": [
-        "在我不经意的时候 掀起一阵涟漪"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "在我不经意的时候 掀起一阵涟漪"
+        ],
+        [
+          "偶尔捎来消息 将我整天灼热的思绪抚平"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-03",
-      "type": "lyric",
-      "chords": [
-        "1maj7"
-      ],
-      "lyrics": [
-        "躲着凉凉的雨 像凉凉的你"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-04",
-      "type": "lyric",
-      "chords": [
-        "1   4"
-      ],
-      "lyrics": [
-        "偶尔捎来消息 将我整天灼热的思绪抚平"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-05",

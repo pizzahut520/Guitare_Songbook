@@ -57,10 +57,19 @@
       "chords": [
         "4   1/3   2m7   5   1"
       ],
-      "lyrics": [
-        "終於有機會 讓自己再沉澱"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "終於有機會 讓自己再沉澱"
+        ],
+        [
+          "終於有機會 讓自己再沉澱"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-05",
@@ -68,10 +77,19 @@
       "chords": [
         "4   1/3   2m7   5"
       ],
-      "lyrics": [
-        "讓我回到過去 不再為你而分裂"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "讓我回到過去 不再為你而分裂"
+        ],
+        [
+          "讓我回到過去 毫無恐懼的直言"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-06",
@@ -79,10 +97,19 @@
       "chords": [
         "4   1/3   2m7   5   1"
       ],
-      "lyrics": [
-        "我竟然如此 執著於星座配對"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我竟然如此 執著於星座配對"
+        ],
+        [
+          "是你太鬆懈 還是我一向太尖銳"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-07",
@@ -90,10 +117,19 @@
       "chords": [
         "4   1/3   2m7   5"
       ],
-      "lyrics": [
-        "但是對我們的感覺 我比誰都要強烈"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "但是對我們的感覺 我比誰都要強烈"
+        ],
+        [
+          "當你不只一次脫口而出 曾是對別人的稱謂"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-08",
@@ -101,10 +137,19 @@
       "chords": [
         "4maj7   5   3m7   6sus4"
       ],
-      "lyrics": [
-        "我曾經仔細聽 你說的大道理"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我曾經仔細聽 你說的大道理"
+        ],
+        [
+          "我曾經仔細聽 你說的大道理"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-09",
@@ -112,10 +157,19 @@
       "chords": [
         "4maj7   5   3m7   6sus4"
       ],
-      "lyrics": [
-        "我曾經認識你 像小孩的任性"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我曾經認識你 像小孩的任性"
+        ],
+        [
+          "曾經小心翼翼 維持表面的和平"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-10",
@@ -123,10 +177,19 @@
       "chords": [
         "4maj7   5   3m7   6sus4"
       ],
-      "lyrics": [
-        "我曾經凝視你 你眼睛裡的熱情"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "我曾經凝視你 你眼睛裡的熱情"
+        ],
+        [
+          "曾經認真反省 不唱昨日的歌曲"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "1-11",
@@ -134,98 +197,19 @@
       "chords": [
         "4maj7   5   1"
       ],
-      "lyrics": [
-        "小心不跌入 你流失的回憶"
+      "spacing": "compact",
+      "lyric_sets": [
+        [
+          "小心不跌入 你流失的回憶"
+        ],
+        [
+          "小心不跌入 你流失的回憶"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-12",
-      "type": "lyric",
-      "chords": [
-        "4   1/3   2m7   5   1"
-      ],
-      "lyrics": [
-        "終於有機會 讓自己再沉澱"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-13",
-      "type": "lyric",
-      "chords": [
-        "4   1/3   2m7   5"
-      ],
-      "lyrics": [
-        "讓我回到過去 毫無恐懼的直言"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-14",
-      "type": "lyric",
-      "chords": [
-        "4   1/3   2m7   5   1"
-      ],
-      "lyrics": [
-        "是你太鬆懈 還是我一向太尖銳"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-15",
-      "type": "lyric",
-      "chords": [
-        "4   1/3   2m7   5"
-      ],
-      "lyrics": [
-        "當你不只一次脫口而出 曾是對別人的稱謂"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-16",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5   3m7   6sus4"
-      ],
-      "lyrics": [
-        "我曾經仔細聽 你說的大道理"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-17",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5   3m7   6sus4"
-      ],
-      "lyrics": [
-        "曾經小心翼翼 維持表面的和平"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-18",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5   3m7   6sus4"
-      ],
-      "lyrics": [
-        "曾經認真反省 不唱昨日的歌曲"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-19",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5   1"
-      ],
-      "lyrics": [
-        "小心不跌入 你流失的回憶"
-      ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ]
     },
     {
       "id": "section-20",
