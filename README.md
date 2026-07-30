@@ -62,7 +62,7 @@ B: 看你紧闭的嘴唇 它什么都不说
 pnpm songs:review-variants
 ```
 
-结果写入 `tmp/song-variant-review.csv`。在 `decision` 列填写 `merge` 或 `keep`，审核后运行 `pnpm songs:review-variants --apply` 写回歌曲；黄金样本《旅行的意义》不会进入批处理候选。
+结果以 Excel 可直接识别的 UTF-8 BOM 编码写入 `tmp/song-variant-review.csv`。在 `decision` 列填写 `merge` 或 `keep`，审核后运行 `pnpm songs:review-variants --apply` 写回歌曲；黄金样本《旅行的意义》不会进入批处理候选。
 
 MVP 的后续阶段会在应用里加入“粘贴歌词/和弦谱或上传图片、PDF → AI 生成 → 预览确认 → 自动提交”的入口。底层仍使用同一份 JSON Schema。
 

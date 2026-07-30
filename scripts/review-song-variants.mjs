@@ -72,7 +72,8 @@ function csvCell(value) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
 
-function parseCsv(content) {
+export function parseCsv(content) {
+  content = content.replace(/^\uFEFF/, "");
   const rows = [];
   let row = [];
   let cell = "";
@@ -186,7 +187,8 @@ export async function createVariantReview(outputPath = "tmp/song-variant-review.
 
   const absoluteOutput = path.resolve(outputPath);
   await mkdir(path.dirname(absoluteOutput), { recursive: true });
-  await writeFile(absoluteOutput, `${rows.join("\n")}\n`, "utf8");
+  // Excel on Windows needs a UTF-8 BOM to recognize Chinese CSV text correctly.
+  await writeFile(absoluteOutput, `\uFEFF${rows.join("\r\n")}\r\n`, "utf8");
   return { output: absoluteOutput, candidates };
 }
 

@@ -8,7 +8,7 @@ import {
   parseChordBlocks,
   songFromParsed
 } from "../scripts/import-song-texts.mjs";
-import { findVariantCandidates } from "../scripts/review-song-variants.mjs";
+import { findVariantCandidates, parseCsv } from "../scripts/review-song-variants.mjs";
 
 describe("song text importer", () => {
   it("recognizes chord rows without mistaking prose for chords", () => {
@@ -176,6 +176,12 @@ describe("song text importer", () => {
         second_start: 2,
         block_count: 2
       })
+    ]);
+  });
+
+  it("reads an Excel-compatible UTF-8 BOM review CSV", () => {
+    expect(parseCsv('\uFEFF"song","title","decision"\r\n"test","告诉我","merge"\r\n')).toEqual([
+      { song: "test", title: "告诉我", decision: "merge" }
     ]);
   });
 });
