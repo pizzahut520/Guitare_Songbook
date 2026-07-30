@@ -83,23 +83,23 @@ function gridTemplate(widths: number[] | undefined, count: number) {
               </div>
 
               <div class="mobile-lyric">
-                {lyricRows.map((row, rowIndex) => (
-                  <div class="mobile-variant">
-                    {labels[rowIndex] && (
-                      <span class="mobile-variant__label">{labels[rowIndex]}</span>
-                    )}
-                    <div class="mobile-phrase-grid">
-                      {block.chords.map((chord, phraseIndex) => (
-                        <div class="mobile-phrase">
-                          <span class="mobile-phrase__chord" data-degree={chord}>{chord}</span>
+                <div class="mobile-phrase-grid">
+                  {block.chords.map((chord, phraseIndex) => (
+                    <div class="mobile-phrase">
+                      <span class="mobile-phrase__chord" data-degree={chord}>{chord}</span>
+                      {lyricRows.map((row, rowIndex) => (
+                        <div class="mobile-phrase__variant">
+                          {labels[rowIndex] && (
+                            <span class="mobile-variant__label">{labels[rowIndex]}</span>
+                          )}
                           <span class="mobile-phrase__lyric">
                             {row[phraseIndex] || "\u00a0"}
                           </span>
                         </div>
                       ))}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </section>
           );

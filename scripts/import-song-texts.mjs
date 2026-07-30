@@ -179,6 +179,11 @@ function repeatFromLine(line) {
   return line.match(/(?:x|×)\s*(\d+)/i)?.[1];
 }
 
+function variantLyric(line) {
+  const match = line.trim().match(/^([A-Z0-9]+)[.、:：]\s*(.+)$/i);
+  return match ? { label: `${match[1].toUpperCase()}.`, lyric: match[2].trim() } : null;
+}
+
 export function parseChordBlocks(lines, key) {
   const blocks = [];
   const warnings = [];
@@ -214,6 +219,31 @@ export function parseChordBlocks(lines, key) {
     let nextIndex = index + 1;
     while (nextIndex < lines.length && !lines[nextIndex].trim()) nextIndex++;
     const nextLine = lines[nextIndex] ?? "";
+    const variants = [];
+    let variantIndex = nextIndex;
+    while (variantIndex < lines.length) {
+      const variant = variantLyric(lines[variantIndex]);
+      if (!variant) break;
+      variants.push(variant);
+      variantIndex++;
+    }
+
+    if (variants.length >= 2) {
+      const alignedVariants = variants.map((variant) =>
+        alignChordAndLyric(line, variant.lyric, key)
+      );
+      blocks.push({
+        id: safeId(activeSection, blocks.length + 1),
+        type: "lyric",
+        chords: alignedVariants[0].chords,
+        lyric_sets: alignedVariants.map((variant) => variant.lyrics),
+        variant_labels: variants.map((variant) => variant.label),
+        spacing: "compact"
+      });
+      index = variantIndex;
+      continue;
+    }
+
     const nextIsLyric =
       nextLine.trim() &&
       !isChordLine(nextLine) &&

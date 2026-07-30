@@ -24,92 +24,84 @@
   "copyright_status": "private_reference",
   "blocks": [
     {
-      "id": "1-01",
+      "id": "verse-ab-01",
       "type": "lyric",
       "chords": [
         "1   5m"
       ],
-      "lyrics": [
-        "看沉默的电话 它什么都不说"
+      "lyric_sets": [
+        [
+          "看沉默的电话 它什么都不说"
+        ],
+        [
+          "看你紧闭的嘴唇 它什么都不说"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ],
+      "spacing": "compact"
     },
     {
-      "id": "1-02",
+      "id": "verse-ab-02",
       "type": "lyric",
       "chords": [
         "2m   6m"
       ],
-      "lyrics": [
-        "看电视的画面 它无声的闪动"
+      "lyric_sets": [
+        [
+          "看电视的画面 它无声的闪动"
+        ],
+        [
+          "看你飘忽的眼神 它无情的闪躲"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ],
+      "spacing": "compact"
     },
     {
-      "id": "1-03",
+      "id": "verse-ab-03",
       "type": "lyric",
       "chords": [
         "4   3m   6m"
       ],
-      "lyrics": [
-        "看街上的行人 跟我擦肩而过"
+      "lyric_sets": [
+        [
+          "看街上的行人 跟我擦肩而过"
+        ],
+        [
+          "看你和我的回忆 跟我擦肩而过"
+        ]
       ],
-      "spacing": "normal"
+      "variant_labels": [
+        "A.",
+        "B."
+      ],
+      "spacing": "compact"
     },
     {
-      "id": "1-04",
+      "id": "verse-ab-04",
       "type": "lyric",
       "chords": [
         "4   4m   5"
       ],
-      "lyrics": [
-        "整个世界太冷漠 我没有力气再往前走"
+      "lyric_sets": [
+        [
+          "整个世界太冷漠 我没有力气再往前走"
+        ],
+        [
+          "你的改变太冷漠 我没有勇气大声地说"
+        ]
       ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-05",
-      "type": "lyric",
-      "chords": [
-        "1   5m"
+      "variant_labels": [
+        "A.",
+        "B."
       ],
-      "lyrics": [
-        "看你紧闭的嘴唇 它什么都不说"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-06",
-      "type": "lyric",
-      "chords": [
-        "2m   6m"
-      ],
-      "lyrics": [
-        "看你飘忽的眼神 它无情的闪躲"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-07",
-      "type": "lyric",
-      "chords": [
-        "4   3m   6m"
-      ],
-      "lyrics": [
-        "看你和我的回忆 跟我擦肩而过"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-08",
-      "type": "lyric",
-      "chords": [
-        "4   4m   5"
-      ],
-      "lyrics": [
-        "你的改变太冷漠 我没有勇气大声地说"
-      ],
-      "spacing": "normal"
+      "spacing": "compact"
     },
     {
       "id": "section-09",
@@ -120,7 +112,7 @@
       "lyrics": [
         "告诉我 你不是真的离开我"
       ],
-      "spacing": "normal"
+      "spacing": "compact"
     },
     {
       "id": "section-10",
@@ -131,7 +123,7 @@
       "lyrics": [
         "你也不愿这样的夜里 把难过留给我"
       ],
-      "spacing": "normal"
+      "spacing": "compact"
     },
     {
       "id": "section-11",
@@ -142,7 +134,7 @@
       "lyrics": [
         "告诉我 你不是真的离开我"
       ],
-      "spacing": "normal"
+      "spacing": "compact"
     },
     {
       "id": "section-12",
@@ -153,7 +145,7 @@
       "lyrics": [
         "你是要惩罚我的爱 让你失去自由 告诉我"
       ],
-      "spacing": "normal"
+      "spacing": "compact"
     },
     {
       "id": "section-13",

@@ -1030,16 +1030,18 @@ button {
     display: block;
   }
 
-  .mobile-variant + .mobile-variant {
-    margin-top: 0.75rem;
+  .mobile-phrase__variant + .mobile-phrase__variant {
+    margin-top: 0.4rem;
   }
 
   .mobile-variant__label {
-    display: block;
-    margin: 0 0 0.35rem 0.15rem;
+    display: inline-block;
+    min-width: 1.7rem;
+    margin-right: 0.2rem;
     color: var(--muted);
     font-size: 0.78em;
     font-weight: 700;
+    vertical-align: baseline;
   }
 
   .mobile-phrase-grid {
@@ -1072,6 +1074,7 @@ button {
   }
 
   .mobile-phrase__lyric {
+    display: inline;
     color: var(--ink);
     font-family: "Noto Serif SC", "Songti SC", "STSong", serif;
     font-size: 0.93em;

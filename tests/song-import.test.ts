@@ -5,6 +5,7 @@ import {
   cleanLyricLines,
   compactRepeatedLyricBlocks,
   isChordLine,
+  parseChordBlocks,
   songFromParsed
 } from "../scripts/import-song-texts.mjs";
 
@@ -30,6 +31,30 @@ describe("song text importer", () => {
     );
     expect(aligned.chords).toEqual(["1   5   4/6   5"]);
     expect(aligned.lyrics).toEqual(["妳 就是妳 帶著微笑對我拼命眨眼睛"]);
+  });
+
+  it("combines only explicitly marked A/B lyric variants under one chord row", () => {
+    const parsed = parseChordBlocks(
+      [
+        "C   Gm",
+        "A: 看沉默的电话 它什么都不说",
+        "B: 看你紧闭的嘴唇 它什么都不说"
+      ],
+      "C"
+    );
+
+    expect(parsed.warnings).toEqual([]);
+    expect(parsed.blocks).toEqual([
+      expect.objectContaining({
+        chords: ["1   5m"],
+        lyric_sets: [
+          ["看沉默的电话 它什么都不说"],
+          ["看你紧闭的嘴唇 它什么都不说"]
+        ],
+        variant_labels: ["A.", "B."],
+        spacing: "compact"
+      })
+    ]);
   });
 
   it("removes only exact repeated multi-line paragraphs", () => {
