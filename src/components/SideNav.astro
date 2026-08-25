@@ -4,9 +4,10 @@ import type { CollectionEntry } from "astro:content";
 interface Props {
   songs: CollectionEntry<"songs">[];
   currentSlug?: string;
+  currentPage?: "add";
 }
 
-const { songs, currentSlug } = Astro.props;
+const { songs, currentSlug, currentPage } = Astro.props;
 const sortedSongs = [...songs].sort((a, b) =>
   `${a.data.title}\u0000${a.data.artist}`.localeCompare(
     `${b.data.title}\u0000${b.data.artist}`,
@@ -36,6 +37,15 @@ const sortedSongs = [...songs].sort((a, b) =>
     </svg>
     <input type="search" placeholder="搜索歌曲或歌手" data-song-filter />
   </label>
+
+  <a
+    class:list={["side-nav__action", { active: currentPage === "add" }]}
+    href="/add/"
+    aria-current={currentPage === "add" ? "page" : undefined}
+  >
+    <span aria-hidden="true">＋</span>
+    添加歌曲
+  </a>
 
   <nav class="song-directory">
     <p class="directory-label">歌曲目录 <span>{sortedSongs.length}</span></p>

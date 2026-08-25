@@ -1,0 +1,90 @@
+---
+import { getCollection } from "astro:content";
+import SideNav from "../components/SideNav.astro";
+import AppLayout from "../layouts/AppLayout.astro";
+
+const songs = await getCollection("songs");
+---
+
+<AppLayout title="添加歌曲候选 | Guitare Songbook" description="通过网页检索生成待审核的歌曲候选">
+  <div class="app-shell">
+    <SideNav songs={songs} currentPage="add" />
+    <main class="add-main">
+      <header class="mobile-topbar">
+        <button class="icon-button" type="button" data-open-nav aria-label="打开歌曲目录">☰</button>
+        <strong>添加歌曲</strong>
+        <span aria-hidden="true"></span>
+      </header>
+
+      <div class="add-page">
+        <header class="add-page__header">
+          <p class="eyebrow">PHASE 2A · REVIEW FIRST</p>
+          <h1>生成歌曲候选</h1>
+          <p>先搜索并生成结构化草稿，再由你人工核对。本阶段不会写入曲库，也不会自动提交。</p>
+        </header>
+
+        <section class="add-panel" aria-labelledby="search-title">
+          <h2 id="search-title">查找歌曲</h2>
+          <form data-generate-form>
+            <label>
+              <span>歌名 <strong aria-hidden="true">*</strong></span>
+              <input name="title" required maxlength="100" autocomplete="off" />
+            </label>
+            <label>
+              <span>歌手 <small>可选</small></span>
+              <input name="artist" maxlength="100" autocomplete="off" />
+            </label>
+            <button class="primary-button" type="submit" data-generate-button>
+              查找并生成
+            </button>
+          </form>
+          <p class="add-status" data-generate-status role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="candidate-panel" data-candidate hidden aria-labelledby="candidate-title">
+          <div class="candidate-heading">
+            <div>
+              <p class="eyebrow">CANDIDATE</p>
+              <h2 id="candidate-title" data-candidate-title></h2>
+              <p data-candidate-artist></p>
+            </div>
+            <span data-candidate-confidence></span>
+          </div>
+
+          <dl class="candidate-meta">
+            <div><dt>原调</dt><dd data-candidate-key></dd></div>
+            <div><dt>级数基准</dt><dd data-candidate-degree-key></dd></div>
+            <div><dt>Capo</dt><dd data-candidate-capo></dd></div>
+            <div><dt>版本</dt><dd data-candidate-version></dd></div>
+          </dl>
+
+          <div class="candidate-columns">
+            <section>
+              <h3>来源</h3>
+              <ul data-candidate-sources></ul>
+            </section>
+            <section>
+              <h3>需要留意</h3>
+              <ul data-candidate-warnings></ul>
+            </section>
+            <section>
+              <h3>不确定字段</h3>
+              <ul data-candidate-uncertain></ul>
+            </section>
+          </div>
+
+          <details class="candidate-json">
+            <summary>查看候选 JSON</summary>
+            <pre data-candidate-json></pre>
+          </details>
+
+          <button class="primary-button" type="button" disabled title="下一阶段开放">
+            加入曲库 · 下一阶段开放
+          </button>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="../scripts/app-shell.ts"></script>
+  <script src="../scripts/add-song.ts"></script>
+</AppLayout>

@@ -106,7 +106,13 @@ export const SongSchema = z.object({
   language: nonEmptyText,
   tags: z.array(nonEmptyText).default([]),
   source: z.object({
-    type: z.enum(["user_document", "user_text", "public_domain", "licensed"]),
+    type: z.enum([
+      "user_document",
+      "user_text",
+      "public_domain",
+      "licensed",
+      "web_search"
+    ]),
     reference: z.string().trim().optional()
   }),
   copyright_status: z.enum(["private_reference", "public_domain", "licensed"]),
