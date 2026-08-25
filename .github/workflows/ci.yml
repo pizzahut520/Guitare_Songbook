@@ -57,7 +57,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Deploy static assets to Cloudflare Workers
+      - name: Deploy Worker and static assets to Cloudflare Workers
         run: pnpm exec wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
