@@ -21,6 +21,7 @@
   "dependencies": {
     "@vite-pwa/astro": "1.2.0",
     "astro": "7.1.6",
+    "jose": "^6.2.10",
     "zod": "4.4.3"
   },
   "devDependencies": {

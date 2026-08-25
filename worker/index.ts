@@ -9,6 +9,11 @@ import {
   LlmProviderTimeoutError,
   type LlmProvider
 } from "./providers/llm-provider";
+import {
+  verifyAccess,
+  type AccessEnv,
+  type AccessVerifier
+} from "./security/access";
 
 const MAX_REQUEST_BODY_BYTES = 2_048;
 
@@ -16,7 +21,7 @@ export interface Fetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-export interface Env {
+export interface Env extends AccessEnv {
   ASSETS: Fetcher;
   DEEPSEEK_API_KEY?: string;
 }
@@ -27,6 +32,7 @@ export interface WorkerContext {
 
 interface WorkerDependencies {
   createProvider(apiKey: string): LlmProvider;
+  verifyAccess: AccessVerifier;
 }
 
 class RequestBodyTooLargeError extends Error {}
@@ -143,19 +149,21 @@ async function generateSong(
 
 export function createWorker(
   dependencies: WorkerDependencies = {
-    createProvider: (apiKey) => new DeepSeekProvider(apiKey)
+    createProvider: (apiKey) => new DeepSeekProvider(apiKey),
+    verifyAccess
   }
 ) {
   return {
-    async fetch(request: Request, env: Env, ctx: WorkerContext = {}): Promise<Response> {
+    async fetch(request: Request, env: Env, _ctx: WorkerContext = {}): Promise<Response> {
       const { pathname } = new URL(request.url);
 
       if (!pathname.startsWith("/api/")) {
         return env.ASSETS.fetch(request);
       }
 
-      if (!ctx.access) {
-        return errorResponse(401, "access_required", "需要 Cloudflare Access 身份验证");
+      const access = await dependencies.verifyAccess(request, env);
+      if (!access.ok) {
+        return errorResponse(access.status, access.code, access.message);
       }
 
       if (request.method === "POST") {
