@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "slug": "lu-kou-zhang-zhen-yue",
+  "title": "路口",
+  "artist": "张震岳",
+  "credits": {
+    "lyrics": "张震岳",
+    "music": "张震岳"
+  },
+  "original_key": "G# (Ab)",
+  "degree_key": "G",
+  "capo": 1,
+  "language": "zh",
+  "tags": [
+    "弹唱",
+    "吉他",
+    "华语",
+    "张震岳",
+    "2007"
+  ],
+  "source": {
+    "type": "web_search",
+    "reference": "https://chord4.com/tabs/11469"
+  },
+  "copyright_status": "private_reference",
+  "blocks": [
+    {
+      "id": "intro",
+      "type": "instrument",
+      "label": "前奏",
+      "progression": "I Isus4 | I6 I | I Isus4 | I6 I",
+      "repeat": "x2"
+    },
+    {
+      "id": "verse1",
+      "type": "lyric",
+      "chords": [
+        "I Imaj7 IV IVm7",
+        "I Iadd9 iii7 V7",
+        "ii7 IVm7",
+        "ii7 V"
+      ],
+      "lyrics": [
+        "一个人走 无聊的路口",
+        "我还在做梦 以为你会 喜欢我",
+        "我的希望落空 而香烟不离手",
+        "抽到我心很痛"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "verse2",
+      "type": "lyric",
+      "chords": [
+        "I Imaj7 IV IVm7",
+        "I Iadd9 iii7 V7",
+        "ii7 IVm7",
+        "ii7 V"
+      ],
+      "lyrics": [
+        "两个人走 我恨这路口",
+        "你说不爱我 放我在夜里难过",
+        "连再见也不说 而眼泪没停过",
+        "哭到我鼻涕流"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "chorus",
+      "type": "lyric",
+      "chords": [
+        "IVmaj7 iii7 vi7",
+        "ii7 V I",
+        "bVImaj7 vm7",
+        "bII ii V Vsus4"
+      ],
+      "lyrics": [
+        "爱情就是黑洞 扭曲我所有",
+        "我想要爱你却迷失了 我自己",
+        "真的分不出来 给的是不是真爱",
+        "游戏 我玩不起来"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "verse3",
+      "type": "lyric",
+      "chords": [
+        "I Imaj7 IV IVm7",
+        "I Iadd9 iii7 V7",
+        "ii7 IVm7",
+        "ii7 V"
+      ],
+      "lyrics": [
+        "我不想走 去你妈的路口",
+        "破碎的痴梦 丢到马桶 让水流",
+        "本人依然没救 而香烟没停过",
+        "咳到我心很痛"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "interlude",
+      "type": "instrument",
+      "label": "间奏",
+      "progression": "IV | V vi | ii7 V | I | bVImaj7 | vm7 | bII ii | V"
+    },
+    {
+      "id": "chorus2",
+      "type": "lyric",
+      "chords": [
+        "IVmaj7 iii7 vi7",
+        "ii7 V I",
+        "bVImaj7 vm7",
+        "bII ii V Vsus4"
+      ],
+      "lyrics": [
+        "深陷沼泥之中 没有人救我",
+        "手机上都是你曾经留 的讯息",
+        "你眼神的不耐 有如利刃飞过来",
+        "瞬间 我终于明白"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "outro_verse",
+      "type": "lyric",
+      "chords": [
+        "I Imaj7 IV IVm7",
+        "I Iadd9 iii7 V7",
+        "ii7 IVm7",
+        "ii7 V I vi",
+        "ii7 V I V7",
+        "ii7 V I"
+      ],
+      "lyrics": [
+        "一个人走 无聊的路口",
+        "我还在做梦 以为你会 喜欢我",
+        "我的希望落空 而香烟不离手",
+        "抽到我心很痛",
+        "哭到我鼻涕流",
+        "不再为你 心痛"
+      ],
+      "spacing": "normal"
+    },
+    {
+      "id": "theory_legend",
+      "type": "theory_legend",
+      "title": "和弦结构（相对根音）",
+      "items": [
+        {
+          "quality": "major",
+          "formula": "1-3-5"
+        },
+        {
+          "quality": "6",
+          "formula": "1-3-5-6"
+        },
+        {
+          "quality": "add9",
+          "formula": "1-3-5-9"
+        },
+        {
+          "quality": "maj7",
+          "formula": "1-3-5-7"
+        },
+        {
+          "quality": "7",
+          "formula": "1-3-5-b7"
+        },
+        {
+          "quality": "m7",
+          "formula": "1-b3-5-b7"
+        },
+        {
+          "quality": "sus4",
+          "formula": "1-4-5"
+        }
+      ],
+      "note": "和弦以 G 大调（degree_key=G）的音阶级数表示，如 I=G、IV=C、V=D。歌曲含 bVI、bII 等借用和弦，为副歌特色。"
+    }
+  ]
+}
