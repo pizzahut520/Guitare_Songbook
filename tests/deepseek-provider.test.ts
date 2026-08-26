@@ -1,93 +1,192 @@
 import { describe, expect, it, vi } from "vitest";
 import { DeepSeekProvider } from "../worker/providers/deepseek";
-import { LlmProviderError } from "../worker/providers/llm-provider";
+import { LlmProviderError, LlmProviderTimeoutError } from "../worker/providers/llm-provider";
 import { fictitiousSongCandidate } from "./fixtures/fictitious-song-candidate";
 
-describe("DeepSeek provider with mocked fetch", () => {
-  it("uses Responses API, forced web search, JSON Schema, and only the final message", async () => {
+function event(type: string, extra: Record<string, unknown> = {}) {
+  return `event: ${type}\ndata: ${JSON.stringify({ type, ...extra })}\n\n`;
+}
+
+function responseFromChunks(chunks: Uint8Array[]) {
+  return new Response(new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(chunk);
+      controller.close();
+    }
+  }), { headers: { "content-type": "text/event-stream" } });
+}
+
+function responseFromText(value: string) {
+  return responseFromChunks([new TextEncoder().encode(value)]);
+}
+
+function successfulSse(reasoning = "private reasoning") {
+  const json = JSON.stringify(fictitiousSongCandidate);
+  const midpoint = Math.floor(json.length / 2);
+  return [
+    event("response.created"),
+    event("response.reasoning_text.delta", { delta: reasoning }),
+    event("response.output_text.delta", { delta: json.slice(0, midpoint) }),
+    event("response.output_text.delta", { delta: json.slice(midpoint) }),
+    event("response.completed", {
+      response: { usage: { input_tokens: 10, output_tokens: 20, total_tokens: 30 } }
+    })
+  ].join("");
+}
+
+function hangingResponse(signal: AbortSignal, initial = "") {
+  return new Response(new ReadableStream<Uint8Array>({
+    start(controller) {
+      if (initial) controller.enqueue(new TextEncoder().encode(initial));
+      signal.addEventListener("abort", () =>
+        controller.error(new DOMException("Aborted", "AbortError"))
+      );
+    }
+  }), { headers: { "content-type": "text/event-stream" } });
+}
+
+describe("DeepSeek semantic SSE provider with mocked fetch", () => {
+  it("uses streaming Responses API, forced web search, JSON Schema, and 8000 tokens", async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
-      Response.json({
-        status: "completed",
-        output: [
-          {
-            type: "reasoning",
-            status: "completed",
-            content: [{ type: "reasoning_text", text: "must never reach browser" }]
-          },
-          {
-            type: "message",
-            role: "assistant",
-            status: "completed",
-            content: [
-              { type: "output_text", text: JSON.stringify(fictitiousSongCandidate) }
-            ]
-          }
-        ],
-        usage: { input_tokens: 10, output_tokens: 20, total_tokens: 30 }
-      })
+      responseFromText(successfulSse())
     );
-    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock });
+    const log = vi.fn();
+    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock, log });
     const result = await provider.generateSongCandidate(fictitiousSongCandidate.query);
 
-    expect(fetchMock).toHaveBeenCalledOnce();
     const [url, init] = fetchMock.mock.calls[0];
     const body = JSON.parse(String(init?.body));
     expect(url).toBe("https://api.deepseek.com/responses");
     expect(body).toMatchObject({
       model: "deepseek-v4-flash",
-      stream: false,
+      stream: true,
+      max_output_tokens: 8000,
+      reasoning: { effort: "low" },
       tools: [{ type: "web_search" }],
       tool_choice: { type: "web_search" },
       text: { format: { type: "json_schema", name: "song_candidate" } }
     });
-    expect(JSON.stringify(result)).not.toContain("must never reach browser");
     expect(result).toMatchObject({
       song: { title: "星尘邮局" },
       usage: { input_tokens: 10, output_tokens: 20, total_tokens: 30 }
     });
+    expect(JSON.stringify(result)).not.toContain("private reasoning");
+    expect(JSON.stringify(log.mock.calls)).not.toContain("private reasoning");
   });
 
-  it("rejects invalid JSON in the final message", async () => {
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
-      Response.json({
-        status: "completed",
-        output: [
-          {
-            type: "message",
-            role: "assistant",
-            status: "completed",
-            content: [{ type: "output_text", text: "{not-json" }]
-          }
-        ]
-      })
-    );
-    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock });
-
-    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toBeInstanceOf(
-      LlmProviderError
-    );
+  it("handles SSE frames split across arbitrary chunks", async () => {
+    const bytes = new TextEncoder().encode(successfulSse());
+    const chunks = Array.from(bytes, (byte) => Uint8Array.of(byte));
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromChunks(chunks))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
   });
 
-  it("preserves only safe upstream status and standard error metadata", async () => {
-    const fetchMock = vi.fn(async () =>
-      Response.json(
-        {
-          error: {
-            code: "insufficient_balance",
-            type: "billing_error",
-            message: "raw provider detail must not be retained"
-          }
-        },
-        { status: 402 }
-      )
-    );
-    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock });
+  it("preserves UTF-8 characters split across byte chunks", async () => {
+    const text = successfulSse();
+    const bytes = new TextEncoder().encode(text);
+    const chineseStart = bytes.findIndex((byte) => byte > 0x7f);
+    const chunks = [bytes.slice(0, chineseStart + 1), bytes.slice(chineseStart + 1)];
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromChunks(chunks))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+  });
 
+  it.each([
+    ["response.failed", "upstream"],
+    ["response.incomplete", "invalid_output"]
+  ])("rejects the %s terminal event", async (terminal, kind) => {
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(event(terminal)))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
+      kind
+    });
+  });
+
+  it("rejects malformed semantic SSE", async () => {
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText("event: response.completed\ndata: {bad-json}\n\n"))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
+      kind: "invalid_output"
+    });
+  });
+
+  it("enforces the 30-second idle timeout after valid events", async () => {
+    const log = vi.fn();
+    const fetchMock = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) =>
+      hangingResponse(init!.signal!, event("response.created"))
+    );
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: fetchMock,
+      timeoutMs: 1_000,
+      idleTimeoutMs: 5,
+      log
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" }))
+      .rejects.toBeInstanceOf(LlmProviderTimeoutError);
+    expect(log).toHaveBeenCalledWith(expect.objectContaining({
+      endpoint: "responses_generate",
+      error: { name: "AbortError" }
+    }));
+  });
+
+  it("enforces the 120-second total timeout independently of idle timeout", async () => {
+    const fetchMock = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) =>
+      hangingResponse(init!.signal!)
+    );
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: fetchMock,
+      timeoutMs: 5,
+      idleTimeoutMs: 1_000,
+      log: vi.fn()
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" }))
+      .rejects.toBeInstanceOf(LlmProviderTimeoutError);
+  });
+
+  it("preserves safe upstream metadata without retaining the raw body", async () => {
+    const fetchMock = vi.fn(async () => Response.json({
+      error: {
+        code: "insufficient_balance",
+        type: "billing_error",
+        message: "raw provider detail must not be retained"
+      }
+    }, { status: 402 }));
+    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock });
     await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
       upstreamStatus: 402,
       providerErrorCode: "insufficient_balance",
       providerErrorType: "billing_error",
-      message: "DeepSeek generation request failed"
+      message: "DeepSeek request failed"
     });
+  });
+
+  it("logs only the safe network error structure", async () => {
+    const log = vi.fn();
+    const networkError = Object.assign(new TypeError("secret network detail"), { code: "EHOSTUNREACH" });
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => { throw networkError; }),
+      log
+    });
+    await expect(provider.generateSongCandidate({ title: "private user input" }))
+      .rejects.toBeInstanceOf(LlmProviderError);
+    expect(log).toHaveBeenCalledWith({
+      event: "provider_fetch_error",
+      endpoint: "responses_generate",
+      elapsed_ms: expect.any(Number),
+      error: { name: "TypeError", code: "EHOSTUNREACH" }
+    });
+    const serialized = JSON.stringify(log.mock.calls);
+    expect(serialized).not.toContain("secret network detail");
+    expect(serialized).not.toContain("private user input");
+    expect(serialized).not.toContain("test-only-key");
   });
 });

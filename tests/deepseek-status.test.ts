@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { checkDeepSeekStatus } from "../worker/providers/deepseek";
+import { checkDeepSeekStatus, probeDeepSeekResponses } from "../worker/providers/deepseek";
 import { LlmProviderError, LlmProviderTimeoutError } from "../worker/providers/llm-provider";
 import { createWorker, type Env } from "../worker/index";
 
@@ -24,7 +24,60 @@ function statusRequest() {
   return new Request(`${baseUrl}/api/deepseek/status`);
 }
 
+function responsesProbeRequest() {
+  return new Request(`${baseUrl}/api/deepseek/responses-probe`);
+}
+
 describe("DeepSeek sanitized status probe with mocked fetch", () => {
+  it("uses the minimal non-streaming Responses probe and discards its body", async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      Response.json({ output_text: "must not be returned" })
+    );
+    const result = await probeDeepSeekResponses(testKey, { fetch: fetchMock });
+    const [url, init] = fetchMock.mock.calls[0];
+
+    expect(url).toBe("https://api.deepseek.com/responses");
+    expect(JSON.parse(String(init?.body))).toEqual({
+      model: "deepseek-v4-flash",
+      input: "Reply with exactly OK",
+      reasoning: { effort: "none" },
+      max_output_tokens: 16,
+      stream: false
+    });
+    expect(result).toEqual({ status: "ok", responses_endpoint: true });
+    expect(JSON.stringify(result)).not.toContain("must not be returned");
+  });
+
+  it("exposes the Responses probe only after Access verification", async () => {
+    const probeResponses = vi.fn(async () => ({
+      status: "ok" as const,
+      responses_endpoint: true as const
+    }));
+    const worker = createWorker({ verifyAccess: allowedAccess, probeResponses });
+    const response = await worker.fetch(responsesProbeRequest(), env(), {});
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "ok", responses_endpoint: true });
+    expect(probeResponses).toHaveBeenCalledWith(testKey);
+  });
+
+  it("never calls the Responses probe when Access verification fails", async () => {
+    const probeResponses = vi.fn();
+    const worker = createWorker({
+      probeResponses,
+      verifyAccess: vi.fn(async () => ({
+        ok: false as const,
+        status: 401 as const,
+        code: "access_required" as const,
+        message: "需要 Cloudflare Access 身份验证"
+      }))
+    });
+    const response = await worker.fetch(responsesProbeRequest(), env(), {});
+
+    expect(response.status).toBe(401);
+    expect(probeResponses).not.toHaveBeenCalled();
+  });
+
   it("reports reachability, authentication, and model availability", async () => {
     const fetchMock = vi.fn(async () =>
       Response.json({ data: [{ id: "deepseek-chat" }, { id: "deepseek-v4-flash" }] })

@@ -6,6 +6,8 @@ import {
 import {
   checkDeepSeekStatus,
   DeepSeekProvider,
+  probeDeepSeekResponses,
+  type DeepSeekResponsesProbe,
   type DeepSeekStatus
 } from "./providers/deepseek";
 import {
@@ -37,6 +39,7 @@ export interface WorkerContext {
 interface WorkerDependencies {
   createProvider(apiKey: string): LlmProvider;
   checkProviderStatus(apiKey: string): Promise<DeepSeekStatus>;
+  probeResponses(apiKey: string): Promise<DeepSeekResponsesProbe>;
   verifyAccess: AccessVerifier;
 }
 
@@ -188,12 +191,31 @@ async function deepSeekStatus(env: Env, dependencies: WorkerDependencies): Promi
   }
 }
 
+async function deepSeekResponsesProbe(
+  env: Env,
+  dependencies: WorkerDependencies
+): Promise<Response> {
+  if (!env.DEEPSEEK_API_KEY) {
+    return errorResponse(503, "provider_unavailable", "歌曲生成服务尚未配置");
+  }
+  try {
+    return jsonResponse(await dependencies.probeResponses(env.DEEPSEEK_API_KEY));
+  } catch (error) {
+    if (error instanceof LlmProviderTimeoutError) {
+      return errorResponse(504, "provider_timeout", "歌曲生成服务响应超时");
+    }
+    if (error instanceof LlmProviderError) return providerErrorResponse(error);
+    return errorResponse(502, "provider_unreachable", "无法连接歌曲生成服务");
+  }
+}
+
 export function createWorker(
   dependencies: Partial<WorkerDependencies> = {}
 ) {
   const workerDependencies: WorkerDependencies = {
     createProvider: (apiKey) => new DeepSeekProvider(apiKey),
     checkProviderStatus: (apiKey) => checkDeepSeekStatus(apiKey),
+    probeResponses: (apiKey) => probeDeepSeekResponses(apiKey),
     verifyAccess,
     ...dependencies
   };
@@ -231,6 +253,13 @@ export function createWorker(
           return errorResponse(400, "invalid_request", "该接口只接受 GET");
         }
         return deepSeekStatus(env, workerDependencies);
+      }
+
+      if (pathname === "/api/deepseek/responses-probe") {
+        if (request.method !== "GET") {
+          return errorResponse(400, "invalid_request", "该接口只接受 GET");
+        }
+        return deepSeekResponsesProbe(env, workerDependencies);
       }
 
       if (pathname === "/api/songs/generate") {
