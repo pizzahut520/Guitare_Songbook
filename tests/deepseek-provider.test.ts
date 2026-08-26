@@ -102,6 +102,9 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
       tool_choice: { type: "web_search" },
       text: { format: { type: "json_schema", name: "song_candidate" } }
     });
+    expect(body.instructions).toContain("Never use Roman numerals.");
+    expect(body.instructions).toContain("Never put absolute chord names in degree fields.");
+    expect(body.instructions).toContain("Use Arabic scale degrees only.");
     expect(result).toMatchObject({
       song: { title: "星尘邮局" },
       usage: { input_tokens: 10, output_tokens: 20, total_tokens: 30 }

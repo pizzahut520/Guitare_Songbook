@@ -88,3 +88,12 @@ export function degreeToChord(
   );
 }
 
+export function formatHarmony(
+  degree: string,
+  key: string,
+  mode: "degree" | "chord",
+  transpose = 0
+): string {
+  return mode === "chord" ? degreeToChord(degree, key, transpose) : degree;
+}
+

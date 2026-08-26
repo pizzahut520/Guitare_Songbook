@@ -1,4 +1,4 @@
-import { degreeToChord, keyAtTranspose } from "../lib/music";
+import { formatHarmony, keyAtTranspose } from "../lib/music";
 
 const sheet = document.querySelector<HTMLElement>("[data-song-sheet]");
 
@@ -21,9 +21,12 @@ if (sheet) {
     const showChordNames = mode === "chord";
     degreeNodes.forEach((node) => {
       const degree = node.dataset.originalDegree ?? "";
-      node.textContent = showChordNames
-        ? degreeToChord(degree, degreeKey, transpose)
-        : degree;
+      node.textContent = formatHarmony(
+        degree,
+        degreeKey,
+        showChordNames ? "chord" : "degree",
+        transpose
+      );
     });
 
     if (transposeValue) {

@@ -4,6 +4,7 @@ import {
   type SongQuery
 } from "../src/lib/song-candidate-schema";
 import { findDuplicateSong, SongIndexSchema } from "../src/lib/song-index";
+import { DEGREE_NOTATION_ERROR } from "../src/lib/song-schema";
 import { z } from "zod";
 import {
   checkDeepSeekStatus,
@@ -134,6 +135,13 @@ const PublishRequestSchema = z.object({
   confirmed: z.literal(true)
 }).strict();
 
+function invalidDegreeIssues(error: z.ZodError) {
+  return error.issues
+    .filter((issue) => issue.message === DEGREE_NOTATION_ERROR)
+    .slice(0, 10)
+    .map((issue) => ({ path: issue.path.map(String).join("."), code: issue.code }));
+}
+
 async function publishSong(
   request: Request,
   env: Env,
@@ -152,6 +160,10 @@ async function publishSong(
   }
   const parsed = PublishRequestSchema.safeParse(payload);
   if (!parsed.success) {
+    const issues = invalidDegreeIssues(parsed.error);
+    if (issues.length > 0) {
+      return errorResponse(400, "invalid_degree_notation", "级数记法不合法", { issues });
+    }
     return errorResponse(400, "invalid_candidate", "候选内容无效");
   }
 
@@ -272,6 +284,12 @@ async function generateSong(
     const generated = await provider.generateSongCandidate(query);
     const candidate = SongCandidateSchema.safeParse(generated);
     if (!candidate.success) {
+      const degreeIssues = invalidDegreeIssues(candidate.error);
+      if (degreeIssues.length > 0) {
+        return errorResponse(502, "invalid_degree_notation", "生成结果包含非法级数记法", {
+          issues: degreeIssues
+        });
+      }
       const issues = candidate.error.issues.slice(0, 10).map((issue) => ({
         path: issue.path.map(String).join("."),
         code: issue.code

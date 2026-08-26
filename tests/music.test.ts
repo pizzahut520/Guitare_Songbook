@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { degreeToChord, keyAtTranspose } from "../src/lib/music";
+import { degreeToChord, formatHarmony, keyAtTranspose } from "../src/lib/music";
 
 describe("degree notation", () => {
   it("converts ordinary and altered degrees", () => {
@@ -25,6 +25,19 @@ describe("degree notation", () => {
   it("transposes chord names without changing degree data", () => {
     expect(degreeToChord("1 4 5", "C", 2)).toBe("D G A");
     expect(keyAtTranspose("C", 2)).toBe("D");
+  });
+
+  it("converts the 路口 verse progression to chord names", () => {
+    expect(degreeToChord("1 1add9 3m7 6(7)", "G")).toBe("G Gadd9 Bm7 E7");
+    expect(degreeToChord("♭6maj7 5m7 ♭2 2m 5 5sus4", "G")).toBe(
+      "E♭maj7 Dm7 A♭ Am D Dsus4"
+    );
+  });
+
+  it("keeps Arabic degrees in degree mode and renders names in chord mode", () => {
+    const expression = "1 1add9 3m7 6(7)";
+    expect(formatHarmony(expression, "G", "degree")).toBe(expression);
+    expect(formatHarmony(expression, "G", "chord")).toBe("G Gadd9 Bm7 E7");
   });
 });
 

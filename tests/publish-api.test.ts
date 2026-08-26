@@ -58,6 +58,24 @@ describe("secure song publish API", () => {
     expect(createGitHubProvider).not.toHaveBeenCalled();
   });
 
+  it("rejects Roman degrees before any GitHub request and returns only paths", async () => {
+    const candidate = structuredClone(fictitiousSongCandidate);
+    candidate.song.blocks[0].chords[0] = "IV";
+    const createGitHubProvider = vi.fn();
+    const response = await createWorker({ verifyAccess: allowedAccess, createGitHubProvider })
+      .fetch(request({ candidate, confirmed: true }), env(), {});
+    const body = await response.json() as {
+      error: { code: string; issues: Array<{ path: string }> }
+    };
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe("invalid_degree_notation");
+    expect(body.error.issues).toMatchObject([{ path: "candidate.song.blocks.0.chords.0" }]);
+    expect(JSON.stringify(body)).not.toContain("虚构歌词");
+    expect(JSON.stringify(body)).not.toContain("IV");
+    expect(createGitHubProvider).not.toHaveBeenCalled();
+  });
+
   it("recognizes 旅行的意义 as duplicate before calling GitHub", async () => {
     const candidate = structuredClone(fictitiousSongCandidate);
     candidate.song.slug = "new-but-equivalent-slug";

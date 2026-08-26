@@ -2,11 +2,26 @@ import { z } from "zod";
 
 const nonEmptyText = z.string().trim().min(1);
 
+export const DEGREE_NOTATION_ERROR = "invalid_degree_notation";
+const DEGREE_ROOT = "[♭♯]?[1-7]";
+const DEGREE_QUALITY =
+  "(?:m\\(maj7\\)|m7♭5|maj7|m11|m7|m6|7sus4|7sus2|sus4|sus2|add9|m|\\(7\\)|7|6)?";
+const DEGREE_TOKEN = `${DEGREE_ROOT}${DEGREE_QUALITY}(?:/${DEGREE_ROOT})?`;
+export const DEGREE_EXPRESSION_PATTERN = new RegExp(
+  `^(?:\\s*(?:\\|+|-|${DEGREE_TOKEN}))+\\s*$`
+);
+
+export const DegreeExpressionSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .regex(DEGREE_EXPRESSION_PATTERN, DEGREE_NOTATION_ERROR);
+
 export const InstrumentBlockSchema = z.object({
   id: nonEmptyText,
   type: z.literal("instrument"),
   label: nonEmptyText,
-  progression: nonEmptyText,
+  progression: DegreeExpressionSchema,
   repeat: z.string().trim().optional()
 });
 
@@ -14,7 +29,7 @@ export const LyricBlockSchema = z
   .object({
     id: nonEmptyText,
     type: z.literal("lyric"),
-    chords: z.array(z.string()).min(1),
+    chords: z.array(DegreeExpressionSchema).min(1),
     lyrics: z.array(z.string()).optional(),
     lyric_sets: z.array(z.array(z.string())).optional(),
     variant_labels: z.array(z.string()).optional(),

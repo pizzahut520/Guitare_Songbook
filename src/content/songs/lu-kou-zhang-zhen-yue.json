@@ -7,7 +7,7 @@
     "lyrics": "张震岳",
     "music": "张震岳"
   },
-  "original_key": "G# (Ab)",
+  "original_key": "G♯",
   "degree_key": "G",
   "capo": 1,
   "language": "zh",
@@ -28,17 +28,17 @@
       "id": "intro",
       "type": "instrument",
       "label": "前奏",
-      "progression": "I Isus4 | I6 I | I Isus4 | I6 I",
-      "repeat": "x2"
+      "progression": "| 1 1sus4 | 16 1 |",
+      "repeat": "×2"
     },
     {
       "id": "verse1",
       "type": "lyric",
       "chords": [
-        "I Imaj7 IV IVm7",
-        "I Iadd9 iii7 V7",
-        "ii7 IVm7",
-        "ii7 V"
+        "1 1maj7   4 4m7",
+        "1 1add9   3m7 6(7)",
+        "2m7   4m7",
+        "2m7 5 | 1 1sus4"
       ],
       "lyrics": [
         "一个人走 无聊的路口",
@@ -52,10 +52,10 @@
       "id": "verse2",
       "type": "lyric",
       "chords": [
-        "I Imaj7 IV IVm7",
-        "I Iadd9 iii7 V7",
-        "ii7 IVm7",
-        "ii7 V"
+        "1 1maj7   4 4m7",
+        "1 1add9   3m7 6(7)",
+        "2m7   4m7",
+        "2m7 5 | 1 1sus4"
       ],
       "lyrics": [
         "两个人走 我恨这路口",
@@ -69,10 +69,10 @@
       "id": "chorus",
       "type": "lyric",
       "chords": [
-        "IVmaj7 iii7 vi7",
-        "ii7 V I",
-        "bVImaj7 vm7",
-        "bII ii V Vsus4"
+        "4maj7   3m7 6m7",
+        "2m7 5   1",
+        "♭6maj7   5m7",
+        "♭2 2m | 5 | 5sus4"
       ],
       "lyrics": [
         "爱情就是黑洞 扭曲我所有",
@@ -86,10 +86,10 @@
       "id": "verse3",
       "type": "lyric",
       "chords": [
-        "I Imaj7 IV IVm7",
-        "I Iadd9 iii7 V7",
-        "ii7 IVm7",
-        "ii7 V"
+        "1 1maj7   4 4m7",
+        "1 1add9   3m7 6(7)",
+        "2m7   4m7",
+        "2m7 5 | 1 1sus4 | 16 1"
       ],
       "lyrics": [
         "我不想走 去你妈的路口",
@@ -103,16 +103,16 @@
       "id": "interlude",
       "type": "instrument",
       "label": "间奏",
-      "progression": "IV | V vi | ii7 V | I | bVImaj7 | vm7 | bII ii | V"
+      "progression": "| 4 | 5 6m | 2m7 5 | 1 | ♭6maj7 | 5m7 | ♭2 2m | 5 |"
     },
     {
       "id": "chorus2",
       "type": "lyric",
       "chords": [
-        "IVmaj7 iii7 vi7",
-        "ii7 V I",
-        "bVImaj7 vm7",
-        "bII ii V Vsus4"
+        "4maj7   3m7 6m7",
+        "2m7 5   1",
+        "♭6maj7   5m7",
+        "♭2 2m | 5 | 5sus4"
       ],
       "lyrics": [
         "深陷沼泥之中 没有人救我",
@@ -126,12 +126,12 @@
       "id": "outro_verse",
       "type": "lyric",
       "chords": [
-        "I Imaj7 IV IVm7",
-        "I Iadd9 iii7 V7",
-        "ii7 IVm7",
-        "ii7 V I vi",
-        "ii7 V I V7",
-        "ii7 V I"
+        "1 1maj7   4 4m7",
+        "1 1add9   3m7 6(7)",
+        "2m7   4m7",
+        "2m7 5 | 1 6m",
+        "2m7 5 | 1 6(7)",
+        "2m7 5 | 1"
       ],
       "lyrics": [
         "一个人走 无聊的路口",
@@ -142,6 +142,13 @@
         "不再为你 心痛"
       ],
       "spacing": "normal"
+    },
+    {
+      "id": "outro",
+      "type": "instrument",
+      "label": "尾奏",
+      "progression": "| 1 1sus4 | 16 1 |",
+      "repeat": "×2"
     },
     {
       "id": "theory_legend",
@@ -177,7 +184,7 @@
           "formula": "1-4-5"
         }
       ],
-      "note": "和弦以 G 大调（degree_key=G）的音阶级数表示，如 I=G、IV=C、V=D。歌曲含 bVI、bII 等借用和弦，为副歌特色。"
+      "note": "和弦以 G 大调（degree_key=G）的阿拉伯数字音阶级数表示。歌曲含 ♭6、♭2 等借用和弦，为副歌特色。"
     }
   ]
 }

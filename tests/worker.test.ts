@@ -176,6 +176,22 @@ describe("Cloudflare Worker security and routes", () => {
     expect(JSON.stringify(body)).not.toContain("虚构歌词");
   });
 
+  it("rejects generated Roman degrees with paths and without lyrics", async () => {
+    const { env } = createEnv("test-only-key");
+    const invalidCandidate = structuredClone(fictitiousSongCandidate);
+    invalidCandidate.song.blocks[0].chords[0] = "IV";
+    const response = await workerReturning(invalidCandidate).fetch(generateRequest(), env, {});
+    const body = await response.json() as {
+      error: { code: string; issues: Array<{ path: string }> }
+    };
+
+    expect(response.status).toBe(502);
+    expect(body.error.code).toBe("invalid_degree_notation");
+    expect(body.error.issues).toMatchObject([{ path: "song.blocks.0.chords.0" }]);
+    expect(JSON.stringify(body)).not.toContain("虚构歌词");
+    expect(JSON.stringify(body)).not.toContain("IV");
+  });
+
   it("returns 504 when the provider times out", async () => {
     const { env } = createEnv("test-only-key");
     const worker = createWorker({
