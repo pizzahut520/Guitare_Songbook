@@ -7,7 +7,10 @@ export interface LlmProvider {
 export class LlmProviderError extends Error {
   constructor(
     message: string,
-    readonly kind: "upstream" | "invalid_output" = "upstream"
+    readonly kind: "upstream" | "invalid_output" | "unreachable" = "upstream",
+    readonly upstreamStatus?: number,
+    readonly providerErrorCode?: string,
+    readonly providerErrorType?: string
   ) {
     super(message);
     this.name = "LlmProviderError";

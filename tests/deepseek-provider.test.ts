@@ -67,4 +67,27 @@ describe("DeepSeek provider with mocked fetch", () => {
       LlmProviderError
     );
   });
+
+  it("preserves only safe upstream status and standard error metadata", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json(
+        {
+          error: {
+            code: "insufficient_balance",
+            type: "billing_error",
+            message: "raw provider detail must not be retained"
+          }
+        },
+        { status: 402 }
+      )
+    );
+    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock });
+
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
+      upstreamStatus: 402,
+      providerErrorCode: "insufficient_balance",
+      providerErrorType: "billing_error",
+      message: "DeepSeek generation request failed"
+    });
+  });
 });

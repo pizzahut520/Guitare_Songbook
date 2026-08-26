@@ -3,7 +3,11 @@ import {
   SongQuerySchema,
   type SongQuery
 } from "../src/lib/song-candidate-schema";
-import { DeepSeekProvider } from "./providers/deepseek";
+import {
+  checkDeepSeekStatus,
+  DeepSeekProvider,
+  type DeepSeekStatus
+} from "./providers/deepseek";
 import {
   LlmProviderError,
   LlmProviderTimeoutError,
@@ -32,6 +36,7 @@ export interface WorkerContext {
 
 interface WorkerDependencies {
   createProvider(apiKey: string): LlmProvider;
+  checkProviderStatus(apiKey: string): Promise<DeepSeekStatus>;
   verifyAccess: AccessVerifier;
 }
 
@@ -141,18 +146,57 @@ async function generateSong(
       return errorResponse(504, "provider_timeout", "歌曲生成服务响应超时");
     }
     if (error instanceof LlmProviderError) {
-      return errorResponse(502, "provider_error", "歌曲生成服务返回错误");
+      return providerErrorResponse(error);
     }
     return errorResponse(502, "provider_error", "歌曲生成服务暂时不可用");
   }
 }
 
-export function createWorker(
-  dependencies: WorkerDependencies = {
-    createProvider: (apiKey) => new DeepSeekProvider(apiKey),
-    verifyAccess
+function providerErrorResponse(error: LlmProviderError): Response {
+  if (error.kind === "invalid_output") {
+    return errorResponse(502, "invalid_provider_output", "歌曲生成服务返回了无效结果");
   }
+  if (error.kind === "unreachable") {
+    return errorResponse(502, "provider_unreachable", "无法连接歌曲生成服务");
+  }
+  switch (error.upstreamStatus) {
+    case 401:
+      return errorResponse(502, "provider_auth_failed", "歌曲生成服务身份验证失败");
+    case 402:
+      return errorResponse(502, "provider_billing_failed", "歌曲生成服务账户余额或计费异常");
+    case 403:
+      return errorResponse(502, "provider_forbidden", "歌曲生成服务拒绝了请求");
+    case 429:
+      return errorResponse(429, "provider_rate_limited", "歌曲生成服务请求过于频繁");
+    default:
+      return errorResponse(502, "provider_upstream_error", "歌曲生成服务暂时不可用");
+  }
+}
+
+async function deepSeekStatus(env: Env, dependencies: WorkerDependencies): Promise<Response> {
+  if (!env.DEEPSEEK_API_KEY) {
+    return errorResponse(503, "provider_unavailable", "歌曲生成服务尚未配置");
+  }
+  try {
+    return jsonResponse(await dependencies.checkProviderStatus(env.DEEPSEEK_API_KEY));
+  } catch (error) {
+    if (error instanceof LlmProviderTimeoutError) {
+      return errorResponse(504, "provider_timeout", "歌曲生成服务响应超时");
+    }
+    if (error instanceof LlmProviderError) return providerErrorResponse(error);
+    return errorResponse(502, "provider_unreachable", "无法连接歌曲生成服务");
+  }
+}
+
+export function createWorker(
+  dependencies: Partial<WorkerDependencies> = {}
 ) {
+  const workerDependencies: WorkerDependencies = {
+    createProvider: (apiKey) => new DeepSeekProvider(apiKey),
+    checkProviderStatus: (apiKey) => checkDeepSeekStatus(apiKey),
+    verifyAccess,
+    ...dependencies
+  };
   return {
     async fetch(request: Request, env: Env, _ctx: WorkerContext = {}): Promise<Response> {
       const { pathname } = new URL(request.url);
@@ -161,7 +205,7 @@ export function createWorker(
         return env.ASSETS.fetch(request);
       }
 
-      const access = await dependencies.verifyAccess(request, env);
+      const access = await workerDependencies.verifyAccess(request, env);
       if (!access.ok) {
         return errorResponse(access.status, access.code, access.message);
       }
@@ -182,11 +226,18 @@ export function createWorker(
         });
       }
 
+      if (pathname === "/api/deepseek/status") {
+        if (request.method !== "GET") {
+          return errorResponse(400, "invalid_request", "该接口只接受 GET");
+        }
+        return deepSeekStatus(env, workerDependencies);
+      }
+
       if (pathname === "/api/songs/generate") {
         if (request.method !== "POST") {
           return errorResponse(400, "invalid_request", "该接口只接受 POST");
         }
-        return generateSong(request, env, dependencies);
+        return generateSong(request, env, workerDependencies);
       }
 
       return jsonResponse({ status: "not_implemented" }, 501);

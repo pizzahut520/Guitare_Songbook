@@ -14,9 +14,95 @@ const DEEPSEEK_MODEL = "deepseek-v4-flash";
 const DEFAULT_TIMEOUT_MS = 45_000;
 const MAX_OUTPUT_TOKENS = 12_000;
 
-interface DeepSeekProviderOptions {
+export interface DeepSeekProviderOptions {
   fetch?: typeof fetch;
   timeoutMs?: number;
+}
+
+interface DeepSeekErrorPayload {
+  error?: { code?: unknown; type?: unknown };
+}
+
+interface DeepSeekModelsPayload {
+  data?: Array<{ id?: unknown }>;
+}
+
+export interface DeepSeekStatus {
+  status: "ok";
+  reachable: true;
+  authenticated: true;
+  responses_model_available: boolean;
+}
+
+const SAFE_PROVIDER_FIELD = /^[a-zA-Z0-9_.:-]{1,100}$/;
+
+async function safeErrorMetadata(response: Response) {
+  try {
+    const payload = (await response.json()) as DeepSeekErrorPayload;
+    const code =
+      typeof payload.error?.code === "string" && SAFE_PROVIDER_FIELD.test(payload.error.code)
+        ? payload.error.code
+        : undefined;
+    const type =
+      typeof payload.error?.type === "string" && SAFE_PROVIDER_FIELD.test(payload.error.type)
+        ? payload.error.type
+        : undefined;
+    return { code, type };
+  } catch {
+    return {};
+  }
+}
+
+function isAbort(error: unknown, signal: AbortSignal): boolean {
+  return signal.aborted || (error instanceof Error && error.name === "AbortError");
+}
+
+export async function checkDeepSeekStatus(
+  apiKey: string,
+  options: DeepSeekProviderOptions = {}
+): Promise<DeepSeekStatus> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 10_000);
+
+  try {
+    const response = await (options.fetch ?? fetch)(`${DEEPSEEK_BASE_URL}/models`, {
+      method: "GET",
+      headers: { authorization: `Bearer ${apiKey}` },
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      const metadata = await safeErrorMetadata(response);
+      throw new LlmProviderError(
+        "DeepSeek status request failed",
+        "upstream",
+        response.status,
+        metadata.code,
+        metadata.type
+      );
+    }
+
+    let payload: DeepSeekModelsPayload;
+    try {
+      payload = (await response.json()) as DeepSeekModelsPayload;
+    } catch {
+      throw new LlmProviderError("DeepSeek models response was invalid", "invalid_output");
+    }
+    const modelIds = Array.isArray(payload.data)
+      ? payload.data.flatMap((model) => (typeof model.id === "string" ? [model.id] : []))
+      : [];
+    return {
+      status: "ok",
+      reachable: true,
+      authenticated: true,
+      responses_model_available: modelIds.includes(DEEPSEEK_MODEL)
+    };
+  } catch (error) {
+    if (error instanceof LlmProviderError) throw error;
+    if (isAbort(error, controller.signal)) throw new LlmProviderTimeoutError();
+    throw new LlmProviderError("DeepSeek status request failed", "unreachable");
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 interface DeepSeekResponse {
@@ -91,7 +177,14 @@ export class DeepSeekProvider implements LlmProvider {
       });
 
       if (!response.ok) {
-        throw new LlmProviderError(`DeepSeek returned HTTP ${response.status}`);
+        const metadata = await safeErrorMetadata(response);
+        throw new LlmProviderError(
+          "DeepSeek generation request failed",
+          "upstream",
+          response.status,
+          metadata.code,
+          metadata.type
+        );
       }
 
       let payload: DeepSeekResponse;
@@ -142,10 +235,10 @@ export class DeepSeekProvider implements LlmProvider {
       };
     } catch (error) {
       if (error instanceof LlmProviderError) throw error;
-      if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
+      if (isAbort(error, controller.signal)) {
         throw new LlmProviderTimeoutError();
       }
-      throw new LlmProviderError("DeepSeek request failed");
+      throw new LlmProviderError("DeepSeek request failed", "unreachable");
     } finally {
       clearTimeout(timeout);
     }
