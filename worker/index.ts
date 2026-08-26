@@ -3,6 +3,8 @@ import {
   SongQuerySchema,
   type SongQuery
 } from "../src/lib/song-candidate-schema";
+import { findDuplicateSong, SongIndexSchema } from "../src/lib/song-index";
+import { z } from "zod";
 import {
   checkDeepSeekStatus,
   DeepSeekProvider,
@@ -21,8 +23,16 @@ import {
   type AccessEnv,
   type AccessVerifier
 } from "./security/access";
+import {
+  GitHubContentsProvider,
+  GitHubProviderError,
+  type GitHubPublishResult
+} from "./providers/github";
 
 const MAX_REQUEST_BODY_BYTES = 2_048;
+const MAX_PUBLISH_BODY_BYTES = 262_144;
+const DEFAULT_GITHUB_REPOSITORY = "pizzahut520/Guitare_Songbook";
+const DEFAULT_GITHUB_BRANCH = "main";
 
 export interface Fetcher {
   fetch(request: Request): Promise<Response>;
@@ -31,6 +41,9 @@ export interface Fetcher {
 export interface Env extends AccessEnv {
   ASSETS: Fetcher;
   DEEPSEEK_API_KEY?: string;
+  GITHUB_TOKEN?: string;
+  GITHUB_REPOSITORY?: string;
+  GITHUB_BRANCH?: string;
 }
 
 export interface WorkerContext {
@@ -41,6 +54,9 @@ interface WorkerDependencies {
   createProvider(apiKey: string): LlmProvider;
   checkProviderStatus(apiKey: string): Promise<DeepSeekStatus>;
   probeResponses(apiKey: string): Promise<DeepSeekResponsesProbe>;
+  createGitHubProvider(token: string, repository: string, branch: string): {
+    createSong(song: z.infer<typeof SongCandidateSchema>["song"]): Promise<GitHubPublishResult>;
+  };
   verifyAccess: AccessVerifier;
 }
 
@@ -57,12 +73,13 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 interface SafeIssue { path: string; code: string }
+interface SafeExistingSong { title: string; artist: string; url: string }
 
 function errorResponse(
   status: number,
   code: string,
   message: string,
-  details: { reason?: string; issues?: SafeIssue[] } = {}
+  details: { reason?: string; issues?: SafeIssue[]; existing_song?: SafeExistingSong } = {}
 ): Response {
   return jsonResponse({ error: { code, message, ...details } }, status);
 }
@@ -76,9 +93,12 @@ function hasSameOrigin(request: Request): boolean {
   return origin !== null && origin === new URL(request.url).origin;
 }
 
-async function readLimitedBody(request: Request): Promise<string> {
+async function readLimitedBody(
+  request: Request,
+  maximumBytes = MAX_REQUEST_BODY_BYTES
+): Promise<string> {
   const declaredLength = Number(request.headers.get("content-length") ?? 0);
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BODY_BYTES) {
+  if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
     throw new RequestBodyTooLargeError();
   }
   if (!request.body) return "";
@@ -91,7 +111,7 @@ async function readLimitedBody(request: Request): Promise<string> {
     const { done, value } = await reader.read();
     if (done) break;
     byteLength += value.byteLength;
-    if (byteLength > MAX_REQUEST_BODY_BYTES) {
+    if (byteLength > maximumBytes) {
       await reader.cancel();
       throw new RequestBodyTooLargeError();
     }
@@ -105,6 +125,82 @@ async function readLimitedBody(request: Request): Promise<string> {
     offset += chunk.byteLength;
   }
   return new TextDecoder().decode(body);
+}
+
+const PublishRequestSchema = z.object({
+  candidate: SongCandidateSchema,
+  confirmed: z.literal(true)
+}).strict();
+
+async function publishSong(
+  request: Request,
+  env: Env,
+  dependencies: WorkerDependencies
+): Promise<Response> {
+  if (!env.GITHUB_TOKEN) {
+    return errorResponse(503, "github_not_configured", "GitHub 写入尚未配置");
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readLimitedBody(request, MAX_PUBLISH_BODY_BYTES));
+  } catch {
+    return errorResponse(400, "invalid_candidate", "候选内容无效");
+  }
+  const parsed = PublishRequestSchema.safeParse(payload);
+  if (!parsed.success) {
+    return errorResponse(400, "invalid_candidate", "候选内容无效");
+  }
+
+  let indexPayload: unknown;
+  try {
+    const indexRequest = new Request(new URL("/song-index.json", request.url));
+    const indexResponse = await env.ASSETS.fetch(indexRequest);
+    if (!indexResponse.ok) throw new Error("index unavailable");
+    indexPayload = await indexResponse.json();
+  } catch {
+    return errorResponse(502, "github_upstream_error", "无法检查现有曲库");
+  }
+  const index = SongIndexSchema.safeParse(indexPayload);
+  if (!index.success) {
+    return errorResponse(502, "github_upstream_error", "无法检查现有曲库");
+  }
+  const duplicate = findDuplicateSong(index.data, parsed.data.candidate.song);
+  if (duplicate) {
+    return errorResponse(409, "duplicate_song", "歌曲已存在", {
+      existing_song: {
+        title: duplicate.title,
+        artist: duplicate.artist,
+        url: duplicate.url
+      }
+    });
+  }
+
+  const repository = env.GITHUB_REPOSITORY?.trim() || DEFAULT_GITHUB_REPOSITORY;
+  const branch = env.GITHUB_BRANCH?.trim() || DEFAULT_GITHUB_BRANCH;
+  try {
+    const provider = dependencies.createGitHubProvider(env.GITHUB_TOKEN, repository, branch);
+    return jsonResponse(await provider.createSong(parsed.data.candidate.song), 201);
+  } catch (error) {
+    if (!(error instanceof GitHubProviderError)) {
+      return errorResponse(502, "github_upstream_error", "GitHub 写入失败");
+    }
+    const status = error.code === "duplicate_song" || error.code === "github_conflict"
+      ? 409
+      : error.code === "github_rate_limited"
+        ? 429
+        : 502;
+    const message = error.code === "duplicate_song"
+      ? "歌曲已存在"
+      : error.code === "github_auth_failed"
+        ? "GitHub 身份验证失败"
+        : error.code === "github_conflict"
+          ? "GitHub 写入发生冲突"
+          : error.code === "github_rate_limited"
+            ? "GitHub API 请求受限"
+            : "GitHub 写入失败";
+    return errorResponse(status, error.code, message);
+  }
 }
 
 async function parseSongQuery(request: Request): Promise<SongQuery | Response> {
@@ -236,6 +332,8 @@ export function createWorker(
     createProvider: (apiKey) => new DeepSeekProvider(apiKey),
     checkProviderStatus: (apiKey) => checkDeepSeekStatus(apiKey),
     probeResponses: (apiKey) => probeDeepSeekResponses(apiKey),
+    createGitHubProvider: (token, repository, branch) =>
+      new GitHubContentsProvider(token, repository, branch),
     verifyAccess,
     ...dependencies
   };
@@ -264,7 +362,8 @@ export function createWorker(
       if (request.method === "GET" && pathname === "/api/health") {
         return jsonResponse({
           status: "ok",
-          deepseek_configured: Boolean(env.DEEPSEEK_API_KEY)
+          deepseek_configured: Boolean(env.DEEPSEEK_API_KEY),
+          github_configured: Boolean(env.GITHUB_TOKEN)
         });
       }
 
@@ -287,6 +386,13 @@ export function createWorker(
           return errorResponse(400, "invalid_request", "该接口只接受 POST");
         }
         return generateSong(request, env, workerDependencies);
+      }
+
+      if (pathname === "/api/songs/publish") {
+        if (request.method !== "POST") {
+          return errorResponse(400, "invalid_request", "该接口只接受 POST");
+        }
+        return publishSong(request, env, workerDependencies);
       }
 
       return jsonResponse({ status: "not_implemented" }, 501);

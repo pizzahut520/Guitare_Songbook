@@ -63,7 +63,11 @@ describe("Cloudflare Worker security and routes", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ status: "ok", deepseek_configured: false });
+    expect(await response.json()).toEqual({
+      status: "ok",
+      deepseek_configured: false,
+      github_configured: false
+    });
   });
 
   it("returns 503 when the provider secret is not configured", async () => {

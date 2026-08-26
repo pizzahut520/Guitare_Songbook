@@ -1,9 +1,28 @@
-import type { SongCandidate } from "../lib/song-candidate-schema";
+import { SongCandidateSchema, type SongCandidate } from "../lib/song-candidate-schema";
+import {
+  findDuplicateSong,
+  SongIndexSchema,
+  type SongIndexEntry
+} from "../lib/song-index";
+import { createPublishGuard } from "../lib/publish-guard";
 
 const form = document.querySelector<HTMLFormElement>("[data-generate-form]");
 const button = document.querySelector<HTMLButtonElement>("[data-generate-button]");
 const status = document.querySelector<HTMLElement>("[data-generate-status]");
 const candidatePanel = document.querySelector<HTMLElement>("[data-candidate]");
+const duplicateNotice = document.querySelector<HTMLElement>("[data-duplicate]");
+const duplicateLink = document.querySelector<HTMLAnchorElement>("[data-duplicate-link]");
+const confirmation = document.querySelector<HTMLInputElement>("[data-publish-confirm]");
+const publishButton = document.querySelector<HTMLButtonElement>("[data-publish-button]");
+const publishConfig = document.querySelector<HTMLElement>("[data-publish-config]");
+const publishResult = document.querySelector<HTMLElement>("[data-publish-result]");
+const publishCommit = document.querySelector<HTMLAnchorElement>("[data-publish-commit]");
+let publishGuard = createPublishGuard();
+
+let currentCandidate: SongCandidate | undefined;
+let currentDuplicate: SongIndexEntry | undefined;
+let githubConfigured = false;
+let songIndexPromise: Promise<SongIndexEntry[]> | undefined;
 
 function setText(selector: string, value: string | number) {
   const element = document.querySelector<HTMLElement>(selector);
@@ -56,6 +75,56 @@ function renderCandidate(candidate: SongCandidate) {
   if (candidatePanel) candidatePanel.hidden = false;
 }
 
+function loadSongIndex(): Promise<SongIndexEntry[]> {
+  songIndexPromise ??= fetch("/song-index.json", { credentials: "same-origin" })
+    .then(async (response) => {
+      if (!response.ok) throw new Error("无法读取曲库索引");
+      const parsed = SongIndexSchema.safeParse(await response.json());
+      if (!parsed.success) throw new Error("曲库索引格式无效");
+      return parsed.data;
+    });
+  return songIndexPromise;
+}
+
+function updatePublishState() {
+  if (confirmation) confirmation.disabled = !currentCandidate || Boolean(currentDuplicate) || publishGuard.locked;
+  if (publishButton) {
+    publishButton.disabled =
+      !currentCandidate ||
+      Boolean(currentDuplicate) ||
+      !confirmation?.checked ||
+      !githubConfigured ||
+      publishGuard.locked;
+  }
+}
+
+function showDuplicate(duplicate?: SongIndexEntry) {
+  currentDuplicate = duplicate;
+  if (duplicateNotice) duplicateNotice.hidden = !duplicate;
+  if (duplicate && duplicateLink) {
+    duplicateLink.href = duplicate.url;
+    duplicateLink.textContent = `打开《${duplicate.title}》`;
+  }
+  if (confirmation) confirmation.checked = false;
+  updatePublishState();
+}
+
+async function refreshGitHubConfiguration() {
+  try {
+    const response = await fetch("/api/health", { credentials: "same-origin" });
+    const payload = await response.json() as { github_configured?: unknown };
+    githubConfigured = response.ok && payload.github_configured === true;
+  } catch {
+    githubConfigured = false;
+  }
+  if (publishConfig) {
+    publishConfig.textContent = githubConfigured
+      ? "GitHub 写入已配置。确认无误后可以提交。"
+      : "GitHub 写入尚未配置，加入曲库暂不可用。";
+  }
+  updatePublishState();
+}
+
 function errorMessage(httpStatus: number, payload: unknown): string {
   const serverError =
     typeof payload === "object" && payload !== null && "error" in payload
@@ -101,6 +170,11 @@ form?.addEventListener("submit", async (event) => {
   status.className = "add-status is-loading";
   status.textContent = "正在核对歌曲版本、来源与和弦结构，可能需要几十秒。";
   if (candidatePanel) candidatePanel.hidden = true;
+  publishGuard = createPublishGuard();
+  currentCandidate = undefined;
+  showDuplicate(undefined);
+  if (confirmation) confirmation.checked = false;
+  if (publishResult) publishResult.hidden = true;
 
   try {
     const response = await fetch("/api/songs/generate", {
@@ -111,9 +185,16 @@ form?.addEventListener("submit", async (event) => {
     });
     const payload: unknown = await response.json();
     if (!response.ok) throw new Error(errorMessage(response.status, payload));
-    renderCandidate(payload as SongCandidate);
+    const candidate = SongCandidateSchema.safeParse(payload);
+    if (!candidate.success) throw new Error("候选未通过浏览器端数据校验。\n错误码：invalid_candidate");
+    currentCandidate = candidate.data;
+    renderCandidate(candidate.data);
+    const duplicate = findDuplicateSong(await loadSongIndex(), candidate.data.song);
+    showDuplicate(duplicate);
     status.className = "add-status is-success";
-    status.textContent = "候选已生成。请重点核对版本、歌词分句、和弦与来源。";
+    status.textContent = duplicate
+      ? "候选已生成，但歌曲已存在，不能重复加入。"
+      : "候选已生成。请重点核对版本、歌词分句、和弦与来源。";
   } catch (error) {
     status.className = "add-status is-error";
     status.textContent = error instanceof Error ? error.message : "生成失败，请稍后再试。";
@@ -122,3 +203,52 @@ form?.addEventListener("submit", async (event) => {
     button.textContent = "查找并生成";
   }
 });
+
+confirmation?.addEventListener("change", updatePublishState);
+
+publishButton?.addEventListener("click", async () => {
+  if (!currentCandidate || currentDuplicate || !confirmation?.checked || !githubConfigured) return;
+  if (!publishGuard.begin()) return;
+  updatePublishState();
+  publishButton.textContent = "正在提交…";
+  if (status) {
+    status.className = "add-status is-loading";
+    status.textContent = "正在安全提交歌曲 JSON 到 GitHub…";
+  }
+
+  try {
+    const response = await fetch("/api/songs/publish", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ candidate: currentCandidate, confirmed: true })
+    });
+    const payload = await response.json() as {
+      commit_url?: unknown;
+      error?: { message?: unknown; code?: unknown };
+    };
+    if (!response.ok) throw new Error(errorMessage(response.status, payload));
+    if (typeof payload.commit_url !== "string" || !payload.commit_url.startsWith("https://github.com/")) {
+      throw new Error("GitHub 返回结果无效。\n错误码：github_upstream_error");
+    }
+    publishGuard.succeed();
+    publishButton.textContent = "已提交";
+    if (publishCommit) publishCommit.href = payload.commit_url;
+    if (publishResult) publishResult.hidden = false;
+    if (status) {
+      status.className = "add-status is-success";
+      status.textContent = "歌曲已提交，正在等待自动部署。";
+    }
+  } catch (error) {
+    publishGuard.fail();
+    publishButton.textContent = "加入曲库";
+    if (status) {
+      status.className = "add-status is-error";
+      status.textContent = error instanceof Error ? error.message : "提交失败，请稍后再试。";
+    }
+  } finally {
+    updatePublishState();
+  }
+});
+
+void refreshGitHubConfiguration();

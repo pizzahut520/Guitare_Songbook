@@ -18,9 +18,9 @@ const songs = await getCollection("songs");
 
       <div class="add-page">
         <header class="add-page__header">
-          <p class="eyebrow">PHASE 2A · REVIEW FIRST</p>
+          <p class="eyebrow">PHASE 2B · REVIEW THEN PUBLISH</p>
           <h1>生成歌曲候选</h1>
-          <p>先搜索并生成结构化草稿，再由你人工核对。本阶段不会写入曲库，也不会自动提交。</p>
+          <p>先生成结构化草稿并人工核对；确认后可安全提交到 GitHub，等待自动验证和部署。</p>
         </header>
 
         <section class="add-panel" aria-labelledby="search-title">
@@ -78,9 +78,25 @@ const songs = await getCollection("songs");
             <pre data-candidate-json></pre>
           </details>
 
-          <button class="primary-button" type="button" disabled title="下一阶段开放">
-            加入曲库 · 下一阶段开放
+          <div class="duplicate-notice" data-duplicate hidden>
+            <strong>歌曲已存在</strong>
+            <a data-duplicate-link href="/">打开现有歌曲</a>
+          </div>
+
+          <label class="publish-confirmation">
+            <input type="checkbox" data-publish-confirm disabled />
+            <span>我已核对歌曲版本、调性、Capo、歌词、和弦、来源和不确定字段。</span>
+          </label>
+
+          <p class="publish-config" data-publish-config>正在检查 GitHub 写入配置…</p>
+          <button class="primary-button" type="button" data-publish-button disabled>
+            加入曲库
           </button>
+          <div class="publish-result" data-publish-result hidden aria-live="polite">
+            <strong>歌曲已提交，正在等待自动部署。</strong>
+            <p>预计稍后出现在曲库。</p>
+            <a data-publish-commit target="_blank" rel="noreferrer noopener">查看 GitHub commit</a>
+          </div>
         </section>
       </div>
     </main>

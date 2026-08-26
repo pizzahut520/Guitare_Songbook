@@ -427,6 +427,36 @@ button {
   margin-top: 1.2rem;
 }
 
+.duplicate-notice,
+.publish-result {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid #d7c7a8;
+  border-radius: 0.8rem;
+  background: #fff8e8;
+}
+
+.duplicate-notice a,
+.publish-result a {
+  margin-left: 0.65rem;
+}
+
+.publish-confirmation {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  margin: 1rem 0 0.7rem;
+}
+
+.publish-confirmation input {
+  margin-top: 0.25rem;
+}
+
+.publish-config {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .candidate-heading {
   display: flex;
   align-items: start;
