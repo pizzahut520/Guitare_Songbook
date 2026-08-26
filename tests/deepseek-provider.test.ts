@@ -197,6 +197,50 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     });
   });
 
+  it("uses ordered output_text parts from response.content_part.done", async () => {
+    const json = JSON.stringify(fictitiousSongCandidate);
+    const midpoint = Math.floor(json.length / 2);
+    const stream = event("response.content_part.done", {
+      output_index: 0,
+      content_index: 1,
+      part: { type: "output_text", status: "completed", text: json.slice(midpoint) }
+    }) + event("response.content_part.done", {
+      output_index: 0,
+      content_index: 0,
+      part: { type: "output_text", status: "completed", text: json.slice(0, midpoint) }
+    }) + event("response.completed", { response: { status: "completed" } });
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(stream))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+  });
+
+  it("uses assistant output_text from response.output_item.done", async () => {
+    const stream = event("response.output_item.done", {
+      output_index: 0,
+      item: {
+        type: "message",
+        role: "assistant",
+        status: "completed",
+        content: [
+          { type: "reasoning_text", text: "private reasoning" },
+          { type: "output_text", status: "completed", text: JSON.stringify(fictitiousSongCandidate) }
+        ]
+      }
+    }) + event("response.completed", { response: { status: "completed" } });
+    const log = vi.fn();
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(stream)),
+      log
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+    expect(JSON.stringify(log.mock.calls)).not.toContain("private reasoning");
+  });
+
   it("falls back to valid deltas when completed assistant JSON is invalid", async () => {
     const stream = event("response.output_text.delta", {
       delta: JSON.stringify(fictitiousSongCandidate)

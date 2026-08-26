@@ -59,7 +59,27 @@ interface SemanticEvent {
   type?: unknown;
   delta?: unknown;
   text?: unknown;
+  output_index?: unknown;
+  content_index?: unknown;
   incomplete_details?: { reason?: unknown };
+  part?: {
+    type?: unknown;
+    text?: unknown;
+    status?: unknown;
+    incomplete_details?: { reason?: unknown };
+  };
+  item?: {
+    type?: unknown;
+    role?: unknown;
+    status?: unknown;
+    incomplete_details?: { reason?: unknown };
+    content?: Array<{
+      type?: unknown;
+      text?: unknown;
+      status?: unknown;
+      incomplete_details?: { reason?: unknown };
+    }>;
+  };
   response?: {
     status?: unknown;
     incomplete_details?: { reason?: unknown };
@@ -296,6 +316,8 @@ async function readSemanticSse(
   let buffer = "";
   let text = "";
   let doneText: string | undefined;
+  const completedContentParts = new Map<string, string>();
+  const completedOutputItems = new Map<number, string>();
   let completedText: string | undefined;
   let completed = false;
   let usage: ReturnType<typeof cleanUsage>;
@@ -340,6 +362,40 @@ async function readSemanticSse(
         }
         doneText = event.text;
         break;
+      case "response.content_part.done": {
+        if (event.part?.type !== "output_text") break;
+        if (event.part.status !== undefined && event.part.status !== "completed") {
+          throw incompleteOutputError(event.part.incomplete_details?.reason);
+        }
+        if (typeof event.part.text !== "string") {
+          throw new LlmProviderInvalidOutputError("malformed_sse");
+        }
+        const outputIndex = Number.isInteger(event.output_index) ? event.output_index as number : 0;
+        const contentIndex = Number.isInteger(event.content_index) ? event.content_index as number : 0;
+        completedContentParts.set(`${outputIndex}:${contentIndex}`, event.part.text);
+        break;
+      }
+      case "response.output_item.done": {
+        if (event.item?.type !== "message" || event.item.role !== "assistant") break;
+        if (event.item.status !== "completed") {
+          throw incompleteOutputError(event.item.incomplete_details?.reason);
+        }
+        const textParts = (event.item.content ?? []).filter((part) => part.type === "output_text");
+        const incompletePart = textParts.find((part) =>
+          part.status !== undefined && part.status !== "completed"
+        );
+        if (incompletePart) {
+          throw incompleteOutputError(incompletePart.incomplete_details?.reason);
+        }
+        const itemText = textParts.flatMap((part) =>
+          typeof part.text === "string" ? [part.text] : []
+        ).join("");
+        if (itemText) {
+          const outputIndex = Number.isInteger(event.output_index) ? event.output_index as number : 0;
+          completedOutputItems.set(outputIndex, itemText);
+        }
+        break;
+      }
       case "response.completed":
         if (event.response?.status === "incomplete") {
           throw incompleteOutputError(
@@ -397,9 +453,21 @@ async function readSemanticSse(
     if (idleTimer) clearTimeout(idleTimer);
     reader.releaseLock();
   }
+  const contentPartText = [...completedContentParts.entries()]
+    .sort(([left], [right]) => {
+      const [leftOutput, leftContent] = left.split(":").map(Number);
+      const [rightOutput, rightContent] = right.split(":").map(Number);
+      return leftOutput - rightOutput || leftContent - rightContent;
+    })
+    .map(([, partText]) => partText).join("");
+  const outputItemText = [...completedOutputItems.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([, itemText]) => itemText).join("");
   const candidates = [
     ["completed", completedText],
     ["done", doneText],
+    ["done", contentPartText],
+    ["done", outputItemText],
     ["delta", text]
   ].flatMap(([source, candidate]) =>
     typeof candidate === "string" && candidate.trim()
