@@ -415,6 +415,7 @@ button {
 }
 
 .add-status.is-error {
+  white-space: pre-line;
   color: #b34433;
 }
 

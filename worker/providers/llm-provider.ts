@@ -4,6 +4,15 @@ export interface LlmProvider {
   generateSongCandidate(query: SongQuery): Promise<unknown>;
 }
 
+export type InvalidOutputReason =
+  | "no_response_body"
+  | "malformed_sse"
+  | "response_incomplete"
+  | "response_failed"
+  | "no_output_text"
+  | "invalid_json"
+  | "candidate_schema_failed";
+
 export class LlmProviderError extends Error {
   constructor(
     message: string,
@@ -21,5 +30,12 @@ export class LlmProviderTimeoutError extends Error {
   constructor() {
     super("LLM provider timed out");
     this.name = "LlmProviderTimeoutError";
+  }
+}
+
+export class LlmProviderInvalidOutputError extends LlmProviderError {
+  constructor(readonly reason: InvalidOutputReason) {
+    super("LLM provider returned invalid output", "invalid_output");
+    this.name = "LlmProviderInvalidOutputError";
   }
 }

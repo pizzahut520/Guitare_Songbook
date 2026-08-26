@@ -34,6 +34,23 @@ function successfulSse(reasoning = "private reasoning") {
   ].join("");
 }
 
+function completedWithText(text: string, extraOutput: unknown[] = []) {
+  return event("response.completed", {
+    response: {
+      status: "completed",
+      output: [
+        ...extraOutput,
+        {
+          type: "message",
+          role: "assistant",
+          status: "completed",
+          content: [{ type: "output_text", text }]
+        }
+      ]
+    }
+  });
+}
+
 function hangingResponse(signal: AbortSignal, initial = "") {
   return new Response(new ReadableStream<Uint8Array>({
     start(controller) {
@@ -117,15 +134,86 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     });
   });
 
+  it("uses complete assistant output from response.completed when there are no deltas", async () => {
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(
+        completedWithText(JSON.stringify(fictitiousSongCandidate), [
+          { type: "reasoning", content: [{ type: "reasoning_text", text: "private" }] }
+        ])
+      )),
+      log: vi.fn()
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+  });
+
+  it("prefers completed assistant output over accumulated deltas", async () => {
+    const completedCandidate = structuredClone(fictitiousSongCandidate);
+    completedCandidate.song.title = "完成事件版本";
+    const stream = event("response.output_text.delta", {
+      delta: JSON.stringify(fictitiousSongCandidate)
+    }) + completedWithText(JSON.stringify(completedCandidate));
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(stream))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "完成事件版本" }
+    });
+  });
+
+  it("accepts a fully fenced JSON document", async () => {
+    const fenced = `\n\`\`\`json\n${JSON.stringify(fictitiousSongCandidate)}\n\`\`\`\n`;
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(completedWithText(fenced)))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+  });
+
+  it("returns invalid_json without exposing invalid model text", async () => {
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(completedWithText("private invalid text")))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
+      reason: "invalid_json",
+      message: "LLM provider returned invalid output"
+    });
+  });
+
+  it("returns no_output_text when completed has no assistant output_text", async () => {
+    const stream = event("response.completed", {
+      response: {
+        status: "completed",
+        output: [{
+          type: "reasoning",
+          status: "completed",
+          content: [{ type: "reasoning_text", text: "must stay private" }]
+        }]
+      }
+    });
+    const log = vi.fn();
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(stream)),
+      log
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
+      reason: "no_output_text"
+    });
+    expect(JSON.stringify(log.mock.calls)).not.toContain("must stay private");
+  });
+
   it.each([
-    ["response.failed", "upstream"],
+    ["response.failed", "invalid_output"],
     ["response.incomplete", "invalid_output"]
   ])("rejects the %s terminal event", async (terminal, kind) => {
     const provider = new DeepSeekProvider("test-only-key", {
       fetch: vi.fn(async () => responseFromText(event(terminal)))
     });
     await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
-      kind
+      kind,
+      reason: terminal === "response.failed" ? "response_failed" : "response_incomplete"
     });
   });
 
@@ -134,7 +222,8 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
       fetch: vi.fn(async () => responseFromText("event: response.completed\ndata: {bad-json}\n\n"))
     });
     await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
-      kind: "invalid_output"
+      kind: "invalid_output",
+      reason: "malformed_sse"
     });
   });
 

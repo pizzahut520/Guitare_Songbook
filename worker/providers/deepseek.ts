@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { SongCandidateOutputSchema, type SongQuery } from "../../src/lib/song-candidate-schema";
-import { LlmProviderError, LlmProviderTimeoutError, type LlmProvider } from "./llm-provider";
+import {
+  LlmProviderError,
+  LlmProviderInvalidOutputError,
+  LlmProviderTimeoutError,
+  type LlmProvider
+} from "./llm-provider";
 
 const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 const DEEPSEEK_MODEL = "deepseek-v4-flash";
@@ -28,7 +33,17 @@ interface UsagePayload { input_tokens?: unknown; output_tokens?: unknown; total_
 interface SemanticEvent {
   type?: unknown;
   delta?: unknown;
-  response?: { usage?: UsagePayload; error?: ErrorPayload["error"] };
+  response?: {
+    status?: unknown;
+    usage?: UsagePayload;
+    error?: ErrorPayload["error"];
+    output?: Array<{
+      type?: unknown;
+      role?: unknown;
+      status?: unknown;
+      content?: Array<{ type?: unknown; text?: unknown }>;
+    }>;
+  };
 }
 
 export interface DeepSeekStatus {
@@ -201,12 +216,13 @@ async function readSemanticSse(
   idleTimeoutMs: number
 ) {
   if (!response.body) {
-    throw new LlmProviderError("DeepSeek returned no response stream", "invalid_output");
+    throw new LlmProviderInvalidOutputError("no_response_body");
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let text = "";
+  let completedText: string | undefined;
   let completed = false;
   let usage: ReturnType<typeof cleanUsage>;
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
@@ -223,46 +239,49 @@ async function readSemanticSse(
       .map((line) => line.slice(5).trimStart()).join("\n");
     if (!data) return;
     if (data === "[DONE]") {
-      if (!completed) throw new LlmProviderError("DeepSeek stream ended early", "invalid_output");
+      if (!completed) throw new LlmProviderInvalidOutputError("malformed_sse");
       return;
     }
     let event: SemanticEvent;
     try {
       event = JSON.parse(data) as SemanticEvent;
     } catch {
-      throw new LlmProviderError("DeepSeek returned malformed SSE", "invalid_output");
+      throw new LlmProviderInvalidOutputError("malformed_sse");
     }
     if (typeof event.type !== "string" || (eventName && eventName !== event.type)) {
-      throw new LlmProviderError("DeepSeek returned malformed SSE", "invalid_output");
+      throw new LlmProviderInvalidOutputError("malformed_sse");
     }
     resetIdle();
     switch (event.type) {
       case "response.output_text.delta":
         if (typeof event.delta !== "string") {
-          throw new LlmProviderError("DeepSeek returned malformed text delta", "invalid_output");
+          throw new LlmProviderInvalidOutputError("malformed_sse");
         }
         text += event.delta;
         break;
       case "response.completed":
+        if (event.response?.status === "incomplete") {
+          throw new LlmProviderInvalidOutputError("response_incomplete");
+        }
+        if (event.response?.status === "failed") {
+          throw new LlmProviderInvalidOutputError("response_failed");
+        }
         completed = true;
         usage = cleanUsage(event.response?.usage);
+        completedText = [...(event.response?.output ?? [])]
+          .reverse()
+          .find((item) =>
+            item.type === "message" &&
+            item.role === "assistant" &&
+            item.status === "completed"
+          )
+          ?.content?.find((part) => part.type === "output_text" && typeof part.text === "string")
+          ?.text as string | undefined;
         break;
       case "response.incomplete":
-        throw new LlmProviderError("DeepSeek response was incomplete", "invalid_output");
+        throw new LlmProviderInvalidOutputError("response_incomplete");
       case "response.failed":
-        throw new LlmProviderError(
-          "DeepSeek response failed",
-          "upstream",
-          undefined,
-          typeof event.response?.error?.code === "string" &&
-            SAFE_FIELD.test(event.response.error.code)
-            ? event.response.error.code
-            : undefined,
-          typeof event.response?.error?.type === "string" &&
-            SAFE_FIELD.test(event.response.error.type)
-            ? event.response.error.type
-            : undefined
-        );
+        throw new LlmProviderInvalidOutputError("response_failed");
       default:
         // Other valid semantic events, including reasoning, are deliberately discarded.
         break;
@@ -288,10 +307,26 @@ async function readSemanticSse(
     if (idleTimer) clearTimeout(idleTimer);
     reader.releaseLock();
   }
-  if (!completed || !text) {
-    throw new LlmProviderError("DeepSeek stream did not complete", "invalid_output");
+  const finalText = completedText?.trim() ? completedText : text;
+  if (!completed || !finalText.trim()) {
+    throw new LlmProviderInvalidOutputError("no_output_text");
   }
-  return { text, usage };
+  return { text: finalText, usage };
+}
+
+function parseCandidateJson(text: string): unknown {
+  const trimmed = text.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+    if (!fenced) throw new LlmProviderInvalidOutputError("invalid_json");
+    try {
+      return JSON.parse(fenced[1].trim());
+    } catch {
+      throw new LlmProviderInvalidOutputError("invalid_json");
+    }
+  }
 }
 
 export class DeepSeekProvider implements LlmProvider {
@@ -340,12 +375,7 @@ export class DeepSeekProvider implements LlmProvider {
       });
       if (!response.ok) throw await errorForResponse(response);
       const streamed = await readSemanticSse(response, controller, this.idleTimeoutMs);
-      let candidate: unknown;
-      try {
-        candidate = JSON.parse(streamed.text);
-      } catch {
-        throw new LlmProviderError("DeepSeek message was not valid JSON", "invalid_output");
-      }
+      const candidate = parseCandidateJson(streamed.text);
       return {
         ...(candidate as Record<string, unknown>),
         ...(streamed.usage ? { usage: streamed.usage } : {})

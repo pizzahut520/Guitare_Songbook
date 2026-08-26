@@ -12,6 +12,7 @@ import {
 } from "./providers/deepseek";
 import {
   LlmProviderError,
+  LlmProviderInvalidOutputError,
   LlmProviderTimeoutError,
   type LlmProvider
 } from "./providers/llm-provider";
@@ -55,8 +56,15 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function errorResponse(status: number, code: string, message: string): Response {
-  return jsonResponse({ error: { code, message } }, status);
+interface SafeIssue { path: string; code: string }
+
+function errorResponse(
+  status: number,
+  code: string,
+  message: string,
+  details: { reason?: string; issues?: SafeIssue[] } = {}
+): Response {
+  return jsonResponse({ error: { code, message, ...details } }, status);
 }
 
 function isJsonRequest(request: Request): boolean {
@@ -141,7 +149,14 @@ async function generateSong(
     const generated = await provider.generateSongCandidate(query);
     const candidate = SongCandidateSchema.safeParse(generated);
     if (!candidate.success) {
-      return errorResponse(502, "invalid_provider_output", "生成结果未通过数据校验");
+      const issues = candidate.error.issues.slice(0, 10).map((issue) => ({
+        path: issue.path.map(String).join("."),
+        code: issue.code
+      }));
+      return errorResponse(502, "invalid_provider_output", "生成结果未通过数据校验", {
+        reason: "candidate_schema_failed",
+        issues
+      });
     }
     return jsonResponse(candidate.data);
   } catch (error) {
@@ -156,6 +171,11 @@ async function generateSong(
 }
 
 function providerErrorResponse(error: LlmProviderError): Response {
+  if (error instanceof LlmProviderInvalidOutputError) {
+    return errorResponse(502, "invalid_provider_output", "歌曲生成服务返回了无效结果", {
+      reason: error.reason
+    });
+  }
   if (error.kind === "invalid_output") {
     return errorResponse(502, "invalid_provider_output", "歌曲生成服务返回了无效结果");
   }

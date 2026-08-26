@@ -57,11 +57,32 @@ function renderCandidate(candidate: SongCandidate) {
 }
 
 function errorMessage(httpStatus: number, payload: unknown): string {
-  const serverMessage =
+  const serverError =
     typeof payload === "object" && payload !== null && "error" in payload
-      ? (payload as { error?: { message?: unknown } }).error?.message
+      ? (payload as {
+          error?: {
+            code?: unknown;
+            message?: unknown;
+            reason?: unknown;
+            issues?: unknown;
+          };
+        }).error
       : undefined;
-  if (typeof serverMessage === "string") return serverMessage;
+  if (serverError && typeof serverError.message === "string") {
+    const lines = [serverError.message];
+    if (typeof serverError.code === "string") lines.push(`错误码：${serverError.code}`);
+    if (typeof serverError.reason === "string") lines.push(`原因：${serverError.reason}`);
+    if (Array.isArray(serverError.issues)) {
+      const paths = serverError.issues.flatMap((issue) =>
+        issue && typeof issue === "object" && "path" in issue &&
+        typeof (issue as { path?: unknown }).path === "string"
+          ? [(issue as { path: string }).path || "(root)"]
+          : []
+      );
+      if (paths.length) lines.push(`无效字段：${paths.join("、")}`);
+    }
+    return lines.join("\n");
+  }
   if (httpStatus === 401) return "Access 登录已失效，请刷新页面重新登录。";
   if (httpStatus === 503) return "歌曲生成服务尚未配置。";
   if (httpStatus === 504) return "搜索超时，请稍后再试。";

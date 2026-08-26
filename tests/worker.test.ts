@@ -162,6 +162,14 @@ describe("Cloudflare Worker security and routes", () => {
     );
 
     expect(response.status).toBe(502);
+    const body = await response.json() as {
+      error: { reason?: string; issues?: Array<{ path: string; code: string }> }
+    };
+    expect(body.error.reason).toBe("candidate_schema_failed");
+    expect(body.error.issues).toEqual([
+      { path: "song.blocks.0", code: "custom" }
+    ]);
+    expect(JSON.stringify(body)).not.toContain("虚构歌词");
   });
 
   it("returns 504 when the provider times out", async () => {
