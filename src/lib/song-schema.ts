@@ -34,6 +34,10 @@ export const LyricBlockSchema = z
     lyric_sets: z.array(z.array(z.string())).optional(),
     variant_labels: z.array(z.string()).optional(),
     widths: z.array(z.number().positive()).optional(),
+    section_role: z
+      .enum(["verse", "pre_chorus", "chorus", "bridge", "outro", "other"])
+      .optional(),
+    section_label: z.string().trim().max(40).optional(),
     spacing: z.enum(["compact", "normal", "generous"]).default("normal")
   })
   .superRefine((block, context) => {
@@ -100,9 +104,18 @@ export const TheoryLegendBlockSchema = z.object({
   note: z.string().trim().optional()
 });
 
+export const RepeatBlockSchema = z.object({
+  id: nonEmptyText,
+  type: z.literal("repeat"),
+  ref: nonEmptyText,
+  times: z.number().int().min(1).max(8),
+  section_label: z.string().trim().max(40).optional()
+});
+
 export const SongBlockSchema = z.discriminatedUnion("type", [
   InstrumentBlockSchema,
   LyricBlockSchema,
+  RepeatBlockSchema,
   TheoryLegendBlockSchema
 ]);
 
@@ -132,9 +145,47 @@ export const SongSchema = z.object({
   }),
   copyright_status: z.enum(["private_reference", "public_domain", "licensed"]),
   blocks: z.array(SongBlockSchema).min(1)
+}).superRefine((song, context) => {
+  const seen = new Map<string, (typeof song.blocks)[number]>();
+  song.blocks.forEach((block, index) => {
+    if (seen.has(block.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["blocks", index, "id"],
+        message: "block_id_duplicate"
+      });
+      return;
+    }
+    if (block.type === "repeat") {
+      const target = seen.get(block.ref);
+      if (!target) {
+        context.addIssue({
+          code: "custom",
+          path: ["blocks", index, "ref"],
+          message: "repeat_ref_missing_or_forward"
+        });
+      } else if (target.type === "repeat" || target.type === "theory_legend") {
+        context.addIssue({
+          code: "custom",
+          path: ["blocks", index, "ref"],
+          message: "repeat_ref_not_playable"
+        });
+      }
+    }
+    seen.set(block.id, block);
+  });
+
+  if (!song.blocks.some((block) => block.type === "lyric" || block.type === "instrument" || block.type === "repeat")) {
+    context.addIssue({
+      code: "custom",
+      path: ["blocks"],
+      message: "song_requires_playable_block"
+    });
+  }
 });
 
 export type Song = z.infer<typeof SongSchema>;
 export type SongBlock = z.infer<typeof SongBlockSchema>;
 export type LyricBlock = z.infer<typeof LyricBlockSchema>;
+export type RepeatBlock = z.infer<typeof RepeatBlockSchema>;
 

@@ -142,6 +142,13 @@ function invalidDegreeIssues(error: z.ZodError) {
     .map((issue) => ({ path: issue.path.map(String).join("."), code: issue.code }));
 }
 
+function safeValidationIssues(error: z.ZodError): SafeIssue[] {
+  return error.issues.slice(0, 10).map((issue) => ({
+    path: issue.path.map(String).join("."),
+    code: issue.code
+  }));
+}
+
 async function publishSong(
   request: Request,
   env: Env,
@@ -164,7 +171,9 @@ async function publishSong(
     if (issues.length > 0) {
       return errorResponse(400, "invalid_degree_notation", "级数记法不合法", { issues });
     }
-    return errorResponse(400, "invalid_candidate", "候选内容无效");
+    return errorResponse(400, "invalid_candidate", "候选内容无效", {
+      issues: safeValidationIssues(parsed.error)
+    });
   }
 
   let indexPayload: unknown;

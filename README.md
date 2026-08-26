@@ -18,6 +18,7 @@
 - A4 打印样式
 - Zod 内容校验、Vitest 单元测试、Pagefind 构建索引
 - GitHub Actions CI，以及可开关的 Cloudflare Workers CD
+- Phase 2C 发布前结构化编辑器与正式谱面实时预览
 
 ## 本地开发
 
@@ -65,6 +66,14 @@ pnpm songs:review-variants
 结果以 Excel 可直接识别的 UTF-8 BOM 编码写入 `tmp/song-variant-review.csv`。在 `decision` 列填写 `merge` 或 `keep`，审核后运行 `pnpm songs:review-variants --apply` 写回歌曲；黄金样本《旅行的意义》不会进入批处理候选。
 
 MVP 的后续阶段会在应用里加入“粘贴歌词/和弦谱或上传图片、PDF → AI 生成 → 预览确认 → 自动提交”的入口。底层仍使用同一份 JSON Schema。
+
+### Phase 2C：审核、编辑与预览
+
+通过 Cloudflare Access 登录后打开 `/add/`。候选生成完成后，可以在浏览器内存中调整曲式结构、歌词与和弦分句、段落顺序、间距和器乐段，并可将后续段落保存为对此前段落的 `repeat` 引用。编辑器支持明确的上移、下移、拆分、合并和展开按钮，不使用拖拽。
+
+右侧预览复用正式歌曲页的渲染模型、级数转和弦逻辑和谱面 CSS，可切换级数/实际和弦、移调以及手机、平板、桌面/A4 宽度。每次修改都会重新执行 `SongCandidateSchema`、阿拉伯数字级数校验和重复歌曲检测，并自动取消此前的人工确认；只有候选合法、不重复、GitHub 写入已配置且重新确认后才能发布。
+
+编辑和预览不会再次调用 AI，不会把草稿歌词写入 localStorage、URL、日志或数据库。刷新页面会丢弃尚未发布的草稿；多用户和 D1 持久化留待 Phase 3A。
 
 ## Cloudflare 部署
 

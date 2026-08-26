@@ -1,17 +1,13 @@
 ---
 import type { Song } from "../lib/song-schema";
+import { buildSongRenderBlocks, gridTemplate, lyricRows } from "../lib/song-render-model";
 
 interface Props {
   song: Song;
 }
 
 const { song } = Astro.props;
-
-function gridTemplate(widths: number[] | undefined, count: number) {
-  return (widths ?? Array.from({ length: count }, () => 1))
-    .map((width) => `${width}fr`)
-    .join(" ");
-}
+const renderBlocks = buildSongRenderBlocks(song);
 ---
 
 <article
@@ -41,10 +37,10 @@ function gridTemplate(widths: number[] | undefined, count: number) {
 
   <div class="song-body">
     {
-      song.blocks.map((block) => {
+      renderBlocks.map(({ block, renderId }) => {
         if (block.type === "instrument") {
           return (
-            <section class="instrument-block" data-block-id={block.id}>
+            <section class="instrument-block" data-block-id={renderId}>
               <span class="instrument-label">[{block.label}]</span>
               <span class="instrument-progression" data-degree={block.progression}>
                 {block.progression}
@@ -55,13 +51,13 @@ function gridTemplate(widths: number[] | undefined, count: number) {
         }
 
         if (block.type === "lyric") {
-          const lyricRows = block.lyrics ? [block.lyrics] : block.lyric_sets ?? [];
+          const rows = lyricRows(block);
           const labels = block.variant_labels ?? [];
           const grid = gridTemplate(block.widths, block.chords.length);
           return (
             <section
               class={`lyric-block spacing-${block.spacing}`}
-              data-block-id={block.id}
+              data-block-id={renderId}
               style={`--phrase-grid: ${grid}`}
             >
               <div class="desktop-lyric">
@@ -70,7 +66,7 @@ function gridTemplate(widths: number[] | undefined, count: number) {
                     <span data-degree={chord}>{chord}</span>
                   ))}
                 </div>
-                {lyricRows.map((row, rowIndex) => (
+                {rows.map((row, rowIndex) => (
                   <div class="lyric-line">
                     {labels[rowIndex] && (
                       <span class="variant-label">{labels[rowIndex]}</span>
@@ -87,7 +83,7 @@ function gridTemplate(widths: number[] | undefined, count: number) {
                   {block.chords.map((chord, phraseIndex) => (
                     <div class="mobile-phrase">
                       <span class="mobile-phrase__chord" data-degree={chord}>{chord}</span>
-                      {lyricRows.map((row, rowIndex) => (
+                      {rows.map((row, rowIndex) => (
                         <div class="mobile-phrase__variant">
                           {labels[rowIndex] && (
                             <span class="mobile-variant__label">{labels[rowIndex]}</span>
@@ -106,7 +102,7 @@ function gridTemplate(widths: number[] | undefined, count: number) {
         }
 
         return (
-          <section class="theory-legend" data-block-id={block.id}>
+          <section class="theory-legend" data-block-id={renderId}>
             <h2>{block.title}</h2>
             <div class="legend-grid">
               {block.items.map((item) => (

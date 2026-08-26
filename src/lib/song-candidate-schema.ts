@@ -22,7 +22,7 @@ export const CandidateUsageSchema = z.object({
   total_tokens: z.number().int().nonnegative()
 });
 
-const WebSearchSongSchema = SongSchema.extend({
+const WebSearchSongSchema = SongSchema.safeExtend({
   source: SongSchema.shape.source.extend({
     type: z.literal("web_search")
   }),

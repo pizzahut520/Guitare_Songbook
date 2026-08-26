@@ -76,6 +76,25 @@ describe("secure song publish API", () => {
     expect(createGitHubProvider).not.toHaveBeenCalled();
   });
 
+  it("rejects invalid repeat references with safe field paths", async () => {
+    const candidate = structuredClone(fictitiousSongCandidate) as unknown as {
+      song: { blocks: unknown[] }
+    };
+    candidate.song.blocks.push({ id: "bad-repeat", type: "repeat", ref: "missing", times: 1 });
+    const createGitHubProvider = vi.fn();
+    const response = await createWorker({ verifyAccess: allowedAccess, createGitHubProvider })
+      .fetch(request({ candidate, confirmed: true }), env(), {});
+    const body = await response.json() as {
+      error: { code: string; issues: Array<{ path: string }> }
+    };
+
+    expect(response.status).toBe(400);
+    expect(body.error.code).toBe("invalid_candidate");
+    expect(body.error.issues).toMatchObject([{ path: "candidate.song.blocks.1.ref" }]);
+    expect(JSON.stringify(body)).not.toContain("虚构句子");
+    expect(createGitHubProvider).not.toHaveBeenCalled();
+  });
+
   it("recognizes 旅行的意义 as duplicate before calling GitHub", async () => {
     const candidate = structuredClone(fictitiousSongCandidate);
     candidate.song.slug = "new-but-equivalent-slug";
@@ -104,6 +123,9 @@ describe("secure song publish API", () => {
   });
 
   it("validates twice and sends only candidate.song to the default repository and branch", async () => {
+    const editedCandidate = structuredClone(fictitiousSongCandidate);
+    editedCandidate.song.blocks[0].chords[0] = "4   5";
+    editedCandidate.song.blocks[0].lyrics[0] = "编辑后的虚构句子";
     const createSong = vi.fn(async () => ({
       commit_sha: "abc1234def5678",
       commit_url: "https://github.com/pizzahut520/Guitare_Songbook/commit/abc1234def5678",
@@ -115,7 +137,7 @@ describe("secure song publish API", () => {
       checkRepositoryStatus: vi.fn()
     }));
     const response = await createWorker({ verifyAccess: allowedAccess, createGitHubProvider })
-      .fetch(request({ candidate: fictitiousSongCandidate, confirmed: true }), env(), {});
+      .fetch(request({ candidate: editedCandidate, confirmed: true }), env(), {});
 
     expect(response.status).toBe(201);
     expect(createGitHubProvider).toHaveBeenCalledWith(
@@ -123,7 +145,7 @@ describe("secure song publish API", () => {
       "pizzahut520/Guitare_Songbook",
       "main"
     );
-    expect(createSong).toHaveBeenCalledWith(fictitiousSongCandidate.song);
+    expect(createSong).toHaveBeenCalledWith(editedCandidate.song);
     expect(JSON.stringify(createSong.mock.calls)).not.toContain("warnings");
     expect(JSON.stringify(await response.json())).not.toContain("test-only-github-token");
   });
