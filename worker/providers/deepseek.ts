@@ -66,7 +66,18 @@ export interface SafeNoOutputLog {
   elapsed_ms: number;
 }
 
-export type SafeProviderLog = SafeNetworkLog | SafeInvalidJsonLog | SafeNoOutputLog;
+export interface SafeIncompleteResponseLog {
+  event: "provider_incomplete_response";
+  terminal_event: "response.completed" | "response.incomplete";
+  response_status: "incomplete" | "other";
+  incomplete_reason: string;
+  output_tokens?: number;
+  reasoning_tokens?: number;
+  elapsed_ms: number;
+}
+
+export type SafeProviderLog = SafeNetworkLog | SafeInvalidJsonLog | SafeNoOutputLog |
+  SafeIncompleteResponseLog;
 
 export interface DeepSeekProviderOptions {
   fetch?: typeof fetch;
@@ -373,6 +384,27 @@ async function readSemanticSse(
     if (idleTimer) clearTimeout(idleTimer);
     idleTimer = setTimeout(() => controller.abort(), idleTimeoutMs);
   };
+  const logIncomplete = (
+    terminalEvent: SafeIncompleteResponseLog["terminal_event"],
+    status: SafeIncompleteResponseLog["response_status"],
+    reason: unknown,
+    eventUsage?: UsagePayload
+  ) => {
+    const safeReason = typeof reason === "string" && SAFE_FIELD.test(reason) ? reason : "unknown";
+    const outputTokens = Number.isInteger(eventUsage?.output_tokens)
+      ? eventUsage?.output_tokens as number : undefined;
+    const reasoningTokens = Number.isInteger(eventUsage?.output_tokens_details?.reasoning_tokens)
+      ? eventUsage?.output_tokens_details?.reasoning_tokens as number : undefined;
+    (options.log ?? defaultLog)({
+      event: "provider_incomplete_response",
+      terminal_event: terminalEvent,
+      response_status: status,
+      incomplete_reason: safeReason,
+      ...(outputTokens === undefined ? {} : { output_tokens: outputTokens }),
+      ...(reasoningTokens === undefined ? {} : { reasoning_tokens: reasoningTokens }),
+      elapsed_ms: Math.max(0, Date.now() - startedAt)
+    });
+  };
   resetIdle();
 
   const consume = (frame: string) => {
@@ -452,6 +484,12 @@ async function readSemanticSse(
       }
       case "response.completed":
         if (event.response?.status === "incomplete") {
+          logIncomplete(
+            "response.completed",
+            "incomplete",
+            event.response.incomplete_details?.reason ?? event.incomplete_details?.reason,
+            event.response.usage
+          );
           throw incompleteOutputError(
             event.response.incomplete_details?.reason ?? event.incomplete_details?.reason
           );
@@ -460,6 +498,12 @@ async function readSemanticSse(
           throw new LlmProviderInvalidOutputError("response_failed");
         }
         if (event.response?.status !== undefined && event.response.status !== "completed") {
+          logIncomplete(
+            "response.completed",
+            "other",
+            event.response.incomplete_details?.reason ?? event.incomplete_details?.reason,
+            event.response.usage
+          );
           throw incompleteOutputError(
             event.response.incomplete_details?.reason ?? event.incomplete_details?.reason
           );
@@ -483,6 +527,12 @@ async function readSemanticSse(
         completedText = assistantTextFromCompleted(event.response);
         break;
       case "response.incomplete":
+        logIncomplete(
+          "response.incomplete",
+          "incomplete",
+          event.response?.incomplete_details?.reason ?? event.incomplete_details?.reason,
+          event.response?.usage
+        );
         throw incompleteOutputError(
           event.response?.incomplete_details?.reason ?? event.incomplete_details?.reason
         );

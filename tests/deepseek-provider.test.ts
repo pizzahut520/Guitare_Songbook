@@ -500,13 +500,33 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     ["content_filter", "response_filtered"]
   ])("classifies response.incomplete reason %s", async (incompleteReason, reason) => {
     const stream = event("response.incomplete", {
-      response: { status: "incomplete", incomplete_details: { reason: incompleteReason } }
+      response: {
+        status: "incomplete",
+        incomplete_details: { reason: incompleteReason },
+        usage: {
+          input_tokens: 10,
+          output_tokens: 20,
+          total_tokens: 30,
+          output_tokens_details: { reasoning_tokens: 0 }
+        }
+      }
     });
+    const log = vi.fn();
     const provider = new DeepSeekProvider("test-only-key", {
-      fetch: vi.fn(async () => responseFromText(stream))
+      fetch: vi.fn(async () => responseFromText(stream)),
+      log
     });
     await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
       reason
+    });
+    expect(log).toHaveBeenCalledWith({
+      event: "provider_incomplete_response",
+      terminal_event: "response.incomplete",
+      response_status: "incomplete",
+      incomplete_reason: incompleteReason,
+      output_tokens: 20,
+      reasoning_tokens: 0,
+      elapsed_ms: expect.any(Number)
     });
   });
 
