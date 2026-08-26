@@ -268,7 +268,7 @@ export async function probeDeepSeekResponses(
 function instructions(): string {
   return [
     "Return JSON only and conform exactly to the supplied JSON Schema.",
-    "Use web search to identify the correct song and version before drafting.",
+    "You must use web_search at least once to identify the correct song and version before drafting the final JSON.",
     "Find and cross-check title, artist, credits, original key, playable degree key, capo, lyrics, chords, and section structure.",
     "Represent chords as scale degrees compatible with the existing song schema.",
     "Never use Roman numerals.",
@@ -721,7 +721,10 @@ export class DeepSeekProvider implements LlmProvider {
           max_output_tokens: MAX_OUTPUT_TOKENS,
           stream: true,
           tools: [{ type: "web_search" }],
-          tool_choice: { type: "web_search" },
+          // A specific hosted-tool choice caused DeepSeek to emit only web_search_call
+          // items and no final assistant message. Auto still exposes the required tool
+          // while allowing the model to transition from search to structured output.
+          tool_choice: "auto",
           text: {
             format: {
               type: "json_schema",

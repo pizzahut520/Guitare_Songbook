@@ -100,10 +100,11 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
       reasoning: { effort: "none" },
       temperature: 0,
       tools: [{ type: "web_search" }],
-      tool_choice: { type: "web_search" },
+      tool_choice: "auto",
       text: { format: { type: "json_schema", name: "song_candidate" } }
     });
     expect(body.instructions).toContain("Never use Roman numerals.");
+    expect(body.instructions).toContain("You must use web_search at least once");
     expect(body.instructions).toContain("Never put absolute chord names in degree fields.");
     expect(body.instructions).toContain("Use Arabic scale degrees only.");
     expect(body.instructions).toContain(
@@ -239,6 +240,21 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
       song: { title: "星尘邮局" }
     });
     expect(JSON.stringify(log.mock.calls)).not.toContain("private reasoning");
+  });
+
+  it("allows a hosted web search item to be followed by final assistant JSON", async () => {
+    const stream = event("response.output_item.done", {
+      output_index: 0,
+      item: { type: "web_search_call", status: "completed" }
+    }) + completedWithText(JSON.stringify(fictitiousSongCandidate), [
+      { type: "web_search_call", status: "completed" }
+    ]);
+    const fetchMock = vi.fn(async () => responseFromText(stream));
+    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   it("falls back to valid deltas when completed assistant JSON is invalid", async () => {
