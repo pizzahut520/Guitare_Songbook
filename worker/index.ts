@@ -26,7 +26,8 @@ import {
 import {
   GitHubContentsProvider,
   GitHubProviderError,
-  type GitHubPublishResult
+  type GitHubPublishResult,
+  type GitHubRepositoryStatus
 } from "./providers/github";
 
 const MAX_REQUEST_BODY_BYTES = 2_048;
@@ -56,6 +57,7 @@ interface WorkerDependencies {
   probeResponses(apiKey: string): Promise<DeepSeekResponsesProbe>;
   createGitHubProvider(token: string, repository: string, branch: string): {
     createSong(song: z.infer<typeof SongCandidateSchema>["song"]): Promise<GitHubPublishResult>;
+    checkRepositoryStatus(): Promise<GitHubRepositoryStatus>;
   };
   verifyAccess: AccessVerifier;
 }
@@ -137,7 +139,8 @@ async function publishSong(
   env: Env,
   dependencies: WorkerDependencies
 ): Promise<Response> {
-  if (!env.GITHUB_TOKEN) {
+  const githubToken = env.GITHUB_TOKEN?.trim();
+  if (!githubToken) {
     return errorResponse(503, "github_not_configured", "GitHub 写入尚未配置");
   }
 
@@ -179,27 +182,51 @@ async function publishSong(
   const repository = env.GITHUB_REPOSITORY?.trim() || DEFAULT_GITHUB_REPOSITORY;
   const branch = env.GITHUB_BRANCH?.trim() || DEFAULT_GITHUB_BRANCH;
   try {
-    const provider = dependencies.createGitHubProvider(env.GITHUB_TOKEN, repository, branch);
+    const provider = dependencies.createGitHubProvider(githubToken, repository, branch);
     return jsonResponse(await provider.createSong(parsed.data.candidate.song), 201);
   } catch (error) {
     if (!(error instanceof GitHubProviderError)) {
       return errorResponse(502, "github_upstream_error", "GitHub 写入失败");
     }
-    const status = error.code === "duplicate_song" || error.code === "github_conflict"
-      ? 409
-      : error.code === "github_rate_limited"
-        ? 429
-        : 502;
-    const message = error.code === "duplicate_song"
-      ? "歌曲已存在"
-      : error.code === "github_auth_failed"
-        ? "GitHub 身份验证失败"
-        : error.code === "github_conflict"
-          ? "GitHub 写入发生冲突"
-          : error.code === "github_rate_limited"
-            ? "GitHub API 请求受限"
-            : "GitHub 写入失败";
-    return errorResponse(status, error.code, message);
+    return githubErrorResponse(error);
+  }
+}
+
+function githubErrorResponse(error: GitHubProviderError): Response {
+  const status = error.code === "duplicate_song" || error.code === "github_conflict"
+    ? 409
+    : error.code === "github_rate_limited"
+      ? 429
+      : 502;
+  const message = error.code === "duplicate_song"
+    ? "歌曲已存在"
+    : error.code === "github_auth_failed"
+      ? "GitHub 身份验证失败"
+      : error.code === "github_conflict"
+        ? "GitHub 写入发生冲突"
+        : error.code === "github_rate_limited"
+          ? "GitHub API 请求受限"
+          : "GitHub 写入失败";
+  return errorResponse(status, error.code, message, {
+    ...(error.reason ? { reason: error.reason } : {})
+  });
+}
+
+async function githubStatus(env: Env, dependencies: WorkerDependencies): Promise<Response> {
+  const githubToken = env.GITHUB_TOKEN?.trim();
+  if (!githubToken) {
+    return errorResponse(503, "github_not_configured", "GitHub 写入尚未配置");
+  }
+  try {
+    const provider = dependencies.createGitHubProvider(
+      githubToken,
+      DEFAULT_GITHUB_REPOSITORY,
+      DEFAULT_GITHUB_BRANCH
+    );
+    return jsonResponse(await provider.checkRepositoryStatus());
+  } catch (error) {
+    if (error instanceof GitHubProviderError) return githubErrorResponse(error);
+    return errorResponse(502, "github_upstream_error", "GitHub 状态检查失败");
   }
 }
 
@@ -363,7 +390,7 @@ export function createWorker(
         return jsonResponse({
           status: "ok",
           deepseek_configured: Boolean(env.DEEPSEEK_API_KEY),
-          github_configured: Boolean(env.GITHUB_TOKEN)
+          github_configured: Boolean(env.GITHUB_TOKEN?.trim())
         });
       }
 
@@ -379,6 +406,13 @@ export function createWorker(
           return errorResponse(400, "invalid_request", "该接口只接受 GET");
         }
         return deepSeekResponsesProbe(env, workerDependencies);
+      }
+
+      if (pathname === "/api/github/status") {
+        if (request.method !== "GET") {
+          return errorResponse(400, "invalid_request", "该接口只接受 GET");
+        }
+        return githubStatus(env, workerDependencies);
       }
 
       if (pathname === "/api/songs/generate") {

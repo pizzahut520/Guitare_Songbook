@@ -7,8 +7,17 @@ export type GitHubErrorCode =
   | "github_rate_limited"
   | "github_upstream_error";
 
+export type GitHubErrorReason =
+  | "bad_credentials"
+  | "user_agent_required"
+  | "insufficient_permissions"
+  | "repository_not_found"
+  | "branch_protected"
+  | "rate_limited"
+  | "unknown_forbidden";
+
 export class GitHubProviderError extends Error {
-  constructor(readonly code: GitHubErrorCode) {
+  constructor(readonly code: GitHubErrorCode, readonly reason?: GitHubErrorReason) {
     super(code);
     this.name = "GitHubProviderError";
   }
@@ -19,6 +28,13 @@ export interface GitHubPublishResult {
   commit_url: string;
   song_path: string;
   deployment_pending: true;
+}
+
+export interface GitHubRepositoryStatus {
+  status: "ok";
+  authenticated: true;
+  repository_accessible: true;
+  push_permission: boolean;
 }
 
 interface GitHubProviderOptions { fetch?: typeof fetch }
@@ -32,31 +48,107 @@ function base64Utf8(value: string): string {
   return btoa(binary);
 }
 
-function mappedError(response: Response): GitHubProviderError {
-  if (response.status === 401) return new GitHubProviderError("github_auth_failed");
+async function standardErrorMessage(response: Response): Promise<string | undefined> {
+  try {
+    const payload = await response.json() as { message?: unknown };
+    return typeof payload.message === "string" ? payload.message.toLocaleLowerCase("en-US") : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function mappedError(response: Response): Promise<GitHubProviderError> {
+  if (response.status === 401) {
+    return new GitHubProviderError("github_auth_failed", "bad_credentials");
+  }
   if (response.status === 403) {
-    return new GitHubProviderError(
-      response.headers.get("x-ratelimit-remaining") === "0"
-        ? "github_rate_limited"
-        : "github_auth_failed"
-    );
+    const message = await standardErrorMessage(response);
+    if (response.headers.get("x-ratelimit-remaining") === "0" || message?.includes("rate limit")) {
+      return new GitHubProviderError("github_rate_limited", "rate_limited");
+    }
+    if (message?.includes("user agent required")) {
+      return new GitHubProviderError("github_auth_failed", "user_agent_required");
+    }
+    if (message?.includes("protected branch")) {
+      return new GitHubProviderError("github_conflict", "branch_protected");
+    }
+    if (
+      message?.includes("resource not accessible") ||
+      message?.includes("must have push access") ||
+      message?.includes("insufficient permission")
+    ) {
+      return new GitHubProviderError("github_auth_failed", "insufficient_permissions");
+    }
+    return new GitHubProviderError("github_auth_failed", "unknown_forbidden");
   }
   if (response.status === 409) return new GitHubProviderError("github_conflict");
   if (response.status === 422) return new GitHubProviderError("duplicate_song");
-  if (response.status === 429) return new GitHubProviderError("github_rate_limited");
+  if (response.status === 429) {
+    return new GitHubProviderError("github_rate_limited", "rate_limited");
+  }
+  if (response.status === 404) {
+    return new GitHubProviderError("github_auth_failed", "repository_not_found");
+  }
   return new GitHubProviderError("github_upstream_error");
 }
 
 export class GitHubContentsProvider {
   private readonly fetchImplementation: typeof fetch;
+  private readonly token: string;
 
   constructor(
-    private readonly token: string,
+    token: string,
     private readonly repository: string,
     private readonly branch: string,
     options: GitHubProviderOptions = {}
   ) {
+    this.token = token.trim();
     this.fetchImplementation = options.fetch ?? fetch;
+  }
+
+  private standardHeaders() {
+    return {
+      "Accept": "application/vnd.github+json",
+      "Authorization": `Bearer ${this.token}`,
+      "X-GitHub-Api-Version": "2026-03-10",
+      "User-Agent": "Guitare-Songbook-Worker/1.0"
+    };
+  }
+
+  async checkRepositoryStatus(): Promise<GitHubRepositoryStatus> {
+    const [owner, repositoryName] = this.repository.split("/");
+    if (!owner || !repositoryName || this.repository.split("/").length !== 2) {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    const fetchImplementation = this.fetchImplementation;
+    let response: Response;
+    try {
+      response = await fetchImplementation(
+        `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repositoryName)}`,
+        { method: "GET", headers: this.standardHeaders() }
+      );
+    } catch {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    if (!response.ok) throw await mappedError(response);
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    const pushPermission = payload && typeof payload === "object" && "permissions" in payload
+      ? (payload as { permissions?: { push?: unknown } }).permissions?.push
+      : undefined;
+    if (typeof pushPermission !== "boolean") {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    return {
+      status: "ok",
+      authenticated: true,
+      repository_accessible: true,
+      push_permission: pushPermission
+    };
   }
 
   async createSong(song: Song): Promise<GitHubPublishResult> {
@@ -66,11 +158,7 @@ export class GitHubContentsProvider {
     }
     const songPath = `src/content/songs/${song.slug}.json`;
     const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repositoryName)}/contents/${songPath}`;
-    const headers = {
-      accept: "application/vnd.github+json",
-      authorization: `Bearer ${this.token}`,
-      "x-github-api-version": "2026-03-10"
-    };
+    const headers = this.standardHeaders();
     const fetchImplementation = this.fetchImplementation;
 
     let existing: Response;
@@ -83,13 +171,13 @@ export class GitHubContentsProvider {
       throw new GitHubProviderError("github_upstream_error");
     }
     if (existing.ok) throw new GitHubProviderError("duplicate_song");
-    if (existing.status !== 404) throw mappedError(existing);
+    if (existing.status !== 404) throw await mappedError(existing);
 
     let created: Response;
     try {
       created = await fetchImplementation(apiUrl, {
         method: "PUT",
-        headers: { ...headers, "content-type": "application/json" },
+        headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
           message: `feat(songbook): add ${song.artist} - ${song.title}`,
           content: base64Utf8(`${JSON.stringify(song, null, 2)}\n`),
@@ -99,7 +187,7 @@ export class GitHubContentsProvider {
     } catch {
       throw new GitHubProviderError("github_upstream_error");
     }
-    if (created.status !== 201) throw mappedError(created);
+    if (created.status !== 201) throw await mappedError(created);
 
     let payload: unknown;
     try {

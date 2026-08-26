@@ -92,7 +92,10 @@ describe("secure song publish API", () => {
       song_path: "src/content/songs/fictitious-stardust-post-office.json",
       deployment_pending: true as const
     }));
-    const createGitHubProvider = vi.fn(() => ({ createSong }));
+    const createGitHubProvider = vi.fn(() => ({
+      createSong,
+      checkRepositoryStatus: vi.fn()
+    }));
     const response = await createWorker({ verifyAccess: allowedAccess, createGitHubProvider })
       .fetch(request({ candidate: fictitiousSongCandidate, confirmed: true }), env(), {});
 
@@ -105,5 +108,52 @@ describe("secure song publish API", () => {
     expect(createSong).toHaveBeenCalledWith(fictitiousSongCandidate.song);
     expect(JSON.stringify(createSong.mock.calls)).not.toContain("warnings");
     expect(JSON.stringify(await response.json())).not.toContain("test-only-github-token");
+  });
+
+  it("checks repository status without writing and never exposes the token", async () => {
+    const createSong = vi.fn();
+    const checkRepositoryStatus = vi.fn(async () => ({
+      status: "ok" as const,
+      authenticated: true as const,
+      repository_accessible: true as const,
+      push_permission: true
+    }));
+    const createGitHubProvider = vi.fn(() => ({ createSong, checkRepositoryStatus }));
+    const statusEnv = env();
+    statusEnv.GITHUB_TOKEN = "  test-only-github-token  ";
+
+    const response = await createWorker({ verifyAccess: allowedAccess, createGitHubProvider }).fetch(
+      new Request(`${baseUrl}/api/github/status`),
+      statusEnv,
+      {}
+    );
+
+    expect(response.status).toBe(200);
+    expect(createGitHubProvider).toHaveBeenCalledWith(
+      "test-only-github-token",
+      "pizzahut520/Guitare_Songbook",
+      "main"
+    );
+    expect(checkRepositoryStatus).toHaveBeenCalledOnce();
+    expect(createSong).not.toHaveBeenCalled();
+    const body = JSON.stringify(await response.json());
+    expect(body).toContain('"push_permission":true');
+    expect(body).not.toContain("test-only-github-token");
+  });
+
+  it("protects repository status with Access before creating a GitHub provider", async () => {
+    const createGitHubProvider = vi.fn();
+    const response = await createWorker({
+      verifyAccess: vi.fn(async () => ({
+        ok: false as const,
+        status: 401 as const,
+        code: "access_required" as const,
+        message: "Access required"
+      })),
+      createGitHubProvider
+    }).fetch(new Request(`${baseUrl}/api/github/status`), env(), {});
+
+    expect(response.status).toBe(401);
+    expect(createGitHubProvider).not.toHaveBeenCalled();
   });
 });

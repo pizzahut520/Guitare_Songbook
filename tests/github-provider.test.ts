@@ -21,7 +21,7 @@ describe("GitHub Contents provider with mocked fetch", () => {
           })
     );
     const provider = new GitHubContentsProvider(
-      "test-github-token",
+      "  test-github-token  ",
       "pizzahut520/Guitare_Songbook",
       "main",
       { fetch: fetchMock }
@@ -29,6 +29,14 @@ describe("GitHub Contents provider with mocked fetch", () => {
     const result = await provider.createSong(song);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const call of fetchMock.mock.calls) {
+      expect(call[1]?.headers).toMatchObject({
+        "Accept": "application/vnd.github+json",
+        "Authorization": "Bearer test-github-token",
+        "X-GitHub-Api-Version": "2026-03-10",
+        "User-Agent": "Guitare-Songbook-Worker/1.0"
+      });
+    }
     expect(String(fetchMock.mock.calls[0][0])).toContain(
       "/contents/src/content/songs/xugou-yuedui-xingchen-youju.json?ref=main"
     );
@@ -61,12 +69,12 @@ describe("GitHub Contents provider with mocked fetch", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it.each<[number, GitHubProviderError["code"]]>([
-    [401, "github_auth_failed"],
-    [409, "github_conflict"],
-    [422, "duplicate_song"],
-    [429, "github_rate_limited"]
-  ])("maps GitHub HTTP %i to %s", async (status, code) => {
+  it.each<[number, GitHubProviderError["code"], GitHubProviderError["reason"]]>([
+    [401, "github_auth_failed", "bad_credentials"],
+    [409, "github_conflict", undefined],
+    [422, "duplicate_song", undefined],
+    [429, "github_rate_limited", "rate_limited"]
+  ])("maps GitHub HTTP %i to %s", async (status, code, reason) => {
     const fetchMock = vi.fn(async () =>
       fetchMock.mock.calls.length === 1 ? response(404) : response(status)
     );
@@ -74,7 +82,68 @@ describe("GitHub Contents provider with mocked fetch", () => {
       fetch: fetchMock
     });
     await expect(provider.createSong(song)).rejects.toEqual(
-      expect.objectContaining<Partial<GitHubProviderError>>({ code })
+      expect.objectContaining<Partial<GitHubProviderError>>({ code, reason })
     );
+  });
+
+  it.each([
+    ["User agent required", "github_auth_failed", "user_agent_required", {}],
+    [
+      "Resource not accessible by personal access token",
+      "github_auth_failed",
+      "insufficient_permissions",
+      {}
+    ],
+    ["Protected branch update failed", "github_conflict", "branch_protected", {}],
+    ["API rate limit exceeded", "github_rate_limited", "rate_limited", {
+      "x-ratelimit-remaining": "0"
+    }]
+  ])("maps safe 403 reason for %s", async (message, code, reason, headers) => {
+    const fetchMock = vi.fn(async () =>
+      fetchMock.mock.calls.length === 1
+        ? response(404)
+        : Response.json({ message, sensitive_detail: "must not escape" }, { status: 403, headers })
+    );
+    const provider = new GitHubContentsProvider("test-token", "owner/repo", "main", {
+      fetch: fetchMock
+    });
+    let caught: unknown;
+    try {
+      await provider.createSong(song);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toMatchObject({ code, reason });
+    expect(JSON.stringify(caught)).not.toContain("must not escape");
+    expect(JSON.stringify(caught)).not.toContain(message);
+  });
+
+  it("checks repository status with one read-only GET and exposes only push permission", async () => {
+    const fetchMock = vi.fn(async () => Response.json({
+      permissions: { push: true, admin: false },
+      private: true,
+      sensitive_field: "must not escape"
+    }));
+    const provider = new GitHubContentsProvider(
+      " test-token ",
+      "pizzahut520/Guitare_Songbook",
+      "main",
+      { fetch: fetchMock }
+    );
+    const result = await provider.checkRepositoryStatus();
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.github.com/repos/pizzahut520/Guitare_Songbook",
+      expect.objectContaining({ method: "GET" })
+    );
+    expect(result).toEqual({
+      status: "ok",
+      authenticated: true,
+      repository_accessible: true,
+      push_permission: true
+    });
+    expect(JSON.stringify(result)).not.toContain("test-token");
+    expect(JSON.stringify(result)).not.toContain("must not escape");
   });
 });
