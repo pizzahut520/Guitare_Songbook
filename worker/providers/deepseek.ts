@@ -11,7 +11,7 @@ const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 const DEEPSEEK_MODEL = "deepseek-v4-flash";
 const DEFAULT_TIMEOUT_MS = 120_000;
 const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
-const MAX_OUTPUT_TOKENS = 8_000;
+const MAX_OUTPUT_TOKENS = 16_000;
 const SAFE_FIELD = /^[a-zA-Z0-9_.:-]{1,100}$/;
 
 export interface SafeNetworkLog {
@@ -33,15 +33,24 @@ interface UsagePayload { input_tokens?: unknown; output_tokens?: unknown; total_
 interface SemanticEvent {
   type?: unknown;
   delta?: unknown;
+  text?: unknown;
+  incomplete_details?: { reason?: unknown };
   response?: {
     status?: unknown;
+    incomplete_details?: { reason?: unknown };
     usage?: UsagePayload;
     error?: ErrorPayload["error"];
     output?: Array<{
       type?: unknown;
       role?: unknown;
       status?: unknown;
-      content?: Array<{ type?: unknown; text?: unknown }>;
+      incomplete_details?: { reason?: unknown };
+      content?: Array<{
+        type?: unknown;
+        text?: unknown;
+        status?: unknown;
+        incomplete_details?: { reason?: unknown };
+      }>;
     }>;
   };
 }
@@ -197,6 +206,7 @@ function instructions(): string {
     "Use Arabic scale degrees only.",
     "Degree examples: G → 1; Gmaj7 → 1maj7; Bm7 → 3m7; E7 → 6(7); Ebmaj7 → ♭6maj7; Ab → ♭2; Dsus4 → 5sus4.",
     "Keep every lyric phrase count exactly aligned with its chord phrase count.",
+    "Keep the JSON concise; do not repeat identical lyric sections. Use RepeatBlock for exact repetitions.",
     "Set song.source.type to web_search and song.copyright_status to private_reference.",
     "Cite useful web pages in sources; record ambiguity in warnings and uncertain_fields.",
     "Do not include markdown, analysis, reasoning, or token usage in the JSON."
@@ -214,6 +224,40 @@ function cleanUsage(payload?: UsagePayload) {
     : undefined;
 }
 
+function incompleteOutputError(reason: unknown): LlmProviderInvalidOutputError {
+  if (reason === "max_output_tokens") {
+    return new LlmProviderInvalidOutputError("response_truncated");
+  }
+  if (reason === "content_filter") {
+    return new LlmProviderInvalidOutputError("response_filtered");
+  }
+  return new LlmProviderInvalidOutputError("response_incomplete");
+}
+
+function assistantTextFromCompleted(response: SemanticEvent["response"]): string | undefined {
+  const assistant = [...(response?.output ?? [])]
+    .reverse()
+    .find((item) => item.type === "message" && item.role === "assistant");
+  if (!assistant) return undefined;
+  if (assistant.status === "failed") {
+    throw new LlmProviderInvalidOutputError("response_failed");
+  }
+  if (assistant.status !== "completed") {
+    throw incompleteOutputError(assistant.incomplete_details?.reason ?? response?.incomplete_details?.reason);
+  }
+  const outputParts = (assistant.content ?? []).filter((part) => part.type === "output_text");
+  const incompletePart = outputParts.find((part) =>
+    part.status !== undefined && part.status !== "completed"
+  );
+  if (incompletePart) {
+    throw incompleteOutputError(
+      incompletePart.incomplete_details?.reason ?? response?.incomplete_details?.reason
+    );
+  }
+  const texts = outputParts.flatMap((part) => typeof part.text === "string" ? [part.text] : []);
+  return texts.length > 0 ? texts.join("") : undefined;
+}
+
 async function readSemanticSse(
   response: Response,
   controller: AbortController,
@@ -226,6 +270,7 @@ async function readSemanticSse(
   const decoder = new TextDecoder();
   let buffer = "";
   let text = "";
+  let doneText: string | undefined;
   let completedText: string | undefined;
   let completed = false;
   let usage: ReturnType<typeof cleanUsage>;
@@ -263,27 +308,34 @@ async function readSemanticSse(
         }
         text += event.delta;
         break;
+      case "response.output_text.done":
+        if (typeof event.text !== "string") {
+          throw new LlmProviderInvalidOutputError("malformed_sse");
+        }
+        doneText = event.text;
+        break;
       case "response.completed":
         if (event.response?.status === "incomplete") {
-          throw new LlmProviderInvalidOutputError("response_incomplete");
+          throw incompleteOutputError(
+            event.response.incomplete_details?.reason ?? event.incomplete_details?.reason
+          );
         }
         if (event.response?.status === "failed") {
           throw new LlmProviderInvalidOutputError("response_failed");
         }
+        if (event.response?.status !== undefined && event.response.status !== "completed") {
+          throw incompleteOutputError(
+            event.response.incomplete_details?.reason ?? event.incomplete_details?.reason
+          );
+        }
         completed = true;
         usage = cleanUsage(event.response?.usage);
-        completedText = [...(event.response?.output ?? [])]
-          .reverse()
-          .find((item) =>
-            item.type === "message" &&
-            item.role === "assistant" &&
-            item.status === "completed"
-          )
-          ?.content?.find((part) => part.type === "output_text" && typeof part.text === "string")
-          ?.text as string | undefined;
+        completedText = assistantTextFromCompleted(event.response);
         break;
       case "response.incomplete":
-        throw new LlmProviderInvalidOutputError("response_incomplete");
+        throw incompleteOutputError(
+          event.response?.incomplete_details?.reason ?? event.incomplete_details?.reason
+        );
       case "response.failed":
         throw new LlmProviderInvalidOutputError("response_failed");
       default:
@@ -311,11 +363,12 @@ async function readSemanticSse(
     if (idleTimer) clearTimeout(idleTimer);
     reader.releaseLock();
   }
-  const finalText = completedText?.trim() ? completedText : text;
-  if (!completed || !finalText.trim()) {
+  const candidates = [completedText, doneText, text]
+    .flatMap((candidate) => typeof candidate === "string" && candidate.trim() ? [candidate] : []);
+  if (!completed || candidates.length === 0) {
     throw new LlmProviderInvalidOutputError("no_output_text");
   }
-  return { text: finalText, usage };
+  return { candidates, usage };
 }
 
 function parseCandidateJson(text: string): unknown {
@@ -331,6 +384,19 @@ function parseCandidateJson(text: string): unknown {
       throw new LlmProviderInvalidOutputError("invalid_json");
     }
   }
+}
+
+function parseCandidateCandidates(candidates: string[]): unknown {
+  for (const candidate of candidates) {
+    try {
+      return parseCandidateJson(candidate);
+    } catch (error) {
+      if (!(error instanceof LlmProviderInvalidOutputError) || error.reason !== "invalid_json") {
+        throw error;
+      }
+    }
+  }
+  throw new LlmProviderInvalidOutputError("invalid_json");
 }
 
 export class DeepSeekProvider implements LlmProvider {
@@ -379,7 +445,7 @@ export class DeepSeekProvider implements LlmProvider {
       });
       if (!response.ok) throw await errorForResponse(response);
       const streamed = await readSemanticSse(response, controller, this.idleTimeoutMs);
-      const candidate = parseCandidateJson(streamed.text);
+      const candidate = parseCandidateCandidates(streamed.candidates);
       return {
         ...(candidate as Record<string, unknown>),
         ...(streamed.usage ? { usage: streamed.usage } : {})

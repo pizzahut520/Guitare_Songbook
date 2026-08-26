@@ -8,6 +8,8 @@ export type InvalidOutputReason =
   | "no_response_body"
   | "malformed_sse"
   | "response_incomplete"
+  | "response_truncated"
+  | "response_filtered"
   | "response_failed"
   | "no_output_text"
   | "invalid_json"
