@@ -14,7 +14,7 @@ import {
 
 const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 const DEEPSEEK_MODEL = "deepseek-v4-flash";
-const DEFAULT_TIMEOUT_MS = 120_000;
+const DEFAULT_TIMEOUT_MS = 300_000;
 const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
 const MAX_OUTPUT_TOKENS = 32_000;
 const SAFE_FIELD = /^[a-zA-Z0-9_.:-]{1,100}$/;

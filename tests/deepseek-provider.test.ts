@@ -594,7 +594,7 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     }));
   });
 
-  it("enforces the 120-second total timeout independently of idle timeout", async () => {
+  it("enforces the configured total timeout independently of idle timeout", async () => {
     const fetchMock = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) =>
       hangingResponse(init!.signal!)
     );
