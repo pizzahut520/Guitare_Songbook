@@ -82,7 +82,7 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     expect(receiver).not.toBe(provider);
   });
 
-  it("uses streaming Responses API, forced web search, JSON Schema, and 16000 tokens once", async () => {
+  it("uses deterministic streaming Responses API settings and calls fetch once", async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
       responseFromText(successfulSse())
     );
@@ -96,8 +96,9 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     expect(body).toMatchObject({
       model: "deepseek-v4-flash",
       stream: true,
-      max_output_tokens: 16000,
-      reasoning: { effort: "low" },
+      max_output_tokens: 32000,
+      reasoning: { effort: "none" },
+      temperature: 0,
       tools: [{ type: "web_search" }],
       tool_choice: { type: "web_search" },
       text: { format: { type: "json_schema", name: "song_candidate" } }
@@ -258,6 +259,70 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     });
   });
 
+  it("accepts a UTF-8 BOM before an otherwise valid JSON document", async () => {
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(
+        completedWithText(`\uFEFF${JSON.stringify(fictitiousSongCandidate)}`)
+      ))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+  });
+
+  it("repairs trailing commas without changing candidate fields", async () => {
+    const broken = JSON.stringify(fictitiousSongCandidate).replace(/}$/, ",}");
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(completedWithText(broken)))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toEqual(
+      fictitiousSongCandidate
+    );
+  });
+
+  it("repairs an unescaped newline inside a JSON string", async () => {
+    const broken = JSON.stringify(fictitiousSongCandidate)
+      .replace("虚构句子一 虚构句子二", "虚构句子一\n虚构句子二");
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(completedWithText(broken)))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { blocks: [{ lyrics: ["虚构句子一\n虚构句子二"] }] }
+    });
+  });
+
+  it("repairs safely missing terminal JSON brackets", async () => {
+    const broken = JSON.stringify(fictitiousSongCandidate).slice(0, -2);
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(completedWithText(broken)))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+  });
+
+  it("rejects repairable JSON when required business fields were truncated", async () => {
+    const broken = JSON.stringify({ query: fictitiousSongCandidate.query }).slice(0, -1);
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(completedWithText(broken)))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
+      reason: "candidate_schema_failed"
+    });
+  });
+
+  it("rejects repaired JSON that does not satisfy the candidate schema", async () => {
+    const invalid = structuredClone(fictitiousSongCandidate) as Record<string, unknown>;
+    delete invalid.sources;
+    const broken = `${JSON.stringify(invalid).slice(0, -1)},}`;
+    const provider = new DeepSeekProvider("test-only-key", {
+      fetch: vi.fn(async () => responseFromText(completedWithText(broken)))
+    });
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
+      reason: "candidate_schema_failed"
+    });
+  });
+
   it("returns invalid_json without exposing invalid model text", async () => {
     const provider = new DeepSeekProvider("test-only-key", {
       fetch: vi.fn(async () => responseFromText(completedWithText("private invalid text")))
@@ -268,8 +333,10 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     });
   });
 
-  it("rejects explanatory text around otherwise valid JSON", async () => {
-    const mixed = `Here is the result:\n${JSON.stringify(fictitiousSongCandidate)}`;
+  it.each([
+    `Here is the result:\n${JSON.stringify(fictitiousSongCandidate)}`,
+    `${JSON.stringify(fictitiousSongCandidate)}\nThat is the result.`
+  ])("rejects explanatory text mixed with otherwise valid JSON", async (mixed) => {
     const provider = new DeepSeekProvider("test-only-key", {
       fetch: vi.fn(async () => responseFromText(completedWithText(mixed)))
     });
@@ -296,6 +363,19 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     expect(caught).toMatchObject({ reason: "invalid_json" });
     expect(JSON.stringify(caught)).not.toContain("mock-secret-lyric");
     expect(JSON.stringify(log.mock.calls)).not.toContain("mock-secret-lyric");
+    expect(log).toHaveBeenCalledWith(expect.objectContaining({
+      event: "provider_invalid_json",
+      selected_source: "completed",
+      character_count: expect.any(Number),
+      first_character_type: "other",
+      last_character_type: "other",
+      json_error_category: "boundary_violation",
+      response_completed: true,
+      elapsed_ms: expect.any(Number)
+    }));
+    const serializedLog = JSON.stringify(log.mock.calls);
+    expect(serializedLog).not.toContain("test-only-key");
+    expect(serializedLog).not.toContain("private title");
   });
 
   it("returns no_output_text when completed has no assistant output_text", async () => {

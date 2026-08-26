@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { SongCandidateOutputSchema, type SongQuery } from "../../src/lib/song-candidate-schema";
+import { jsonrepair } from "jsonrepair";
+import {
+  SongCandidateOutputSchema,
+  SongCandidateSchema,
+  type SongQuery
+} from "../../src/lib/song-candidate-schema";
 import {
   LlmProviderError,
   LlmProviderInvalidOutputError,
@@ -11,7 +16,7 @@ const DEEPSEEK_BASE_URL = "https://api.deepseek.com";
 const DEEPSEEK_MODEL = "deepseek-v4-flash";
 const DEFAULT_TIMEOUT_MS = 120_000;
 const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
-const MAX_OUTPUT_TOKENS = 16_000;
+const MAX_OUTPUT_TOKENS = 32_000;
 const SAFE_FIELD = /^[a-zA-Z0-9_.:-]{1,100}$/;
 
 export interface SafeNetworkLog {
@@ -21,15 +26,35 @@ export interface SafeNetworkLog {
   error: { name: string; code?: string };
 }
 
+export interface SafeInvalidJsonLog {
+  event: "provider_invalid_json";
+  selected_source: "completed" | "done" | "delta";
+  character_count: number;
+  first_character_type: "object" | "array" | "fence" | "bom" | "other" | "empty";
+  last_character_type: "object_end" | "array_end" | "quote" | "other" | "empty";
+  json_error_category: "boundary_violation" | "parse_and_repair_failed";
+  output_tokens?: number;
+  reasoning_tokens?: number;
+  response_completed: boolean;
+  elapsed_ms: number;
+}
+
+export type SafeProviderLog = SafeNetworkLog | SafeInvalidJsonLog;
+
 export interface DeepSeekProviderOptions {
   fetch?: typeof fetch;
   timeoutMs?: number;
   idleTimeoutMs?: number;
-  log?: (record: SafeNetworkLog) => void;
+  log?: (record: SafeProviderLog) => void;
 }
 
 interface ErrorPayload { error?: { code?: unknown; type?: unknown } }
-interface UsagePayload { input_tokens?: unknown; output_tokens?: unknown; total_tokens?: unknown }
+interface UsagePayload {
+  input_tokens?: unknown;
+  output_tokens?: unknown;
+  total_tokens?: unknown;
+  output_tokens_details?: { reasoning_tokens?: unknown };
+}
 interface SemanticEvent {
   type?: unknown;
   delta?: unknown;
@@ -67,7 +92,7 @@ export interface DeepSeekResponsesProbe {
   responses_endpoint: true;
 }
 
-function defaultLog(record: SafeNetworkLog): void {
+function defaultLog(record: SafeProviderLog): void {
   console.error(JSON.stringify(record));
 }
 
@@ -274,6 +299,7 @@ async function readSemanticSse(
   let completedText: string | undefined;
   let completed = false;
   let usage: ReturnType<typeof cleanUsage>;
+  let diagnosticUsage: { output_tokens?: number; reasoning_tokens?: number } = {};
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   const resetIdle = () => {
     if (idleTimer) clearTimeout(idleTimer);
@@ -330,6 +356,14 @@ async function readSemanticSse(
         }
         completed = true;
         usage = cleanUsage(event.response?.usage);
+        diagnosticUsage = {
+          output_tokens: Number.isInteger(event.response?.usage?.output_tokens)
+            ? event.response?.usage?.output_tokens as number
+            : undefined,
+          reasoning_tokens: Number.isInteger(
+            event.response?.usage?.output_tokens_details?.reasoning_tokens
+          ) ? event.response?.usage?.output_tokens_details?.reasoning_tokens as number : undefined
+        };
         completedText = assistantTextFromCompleted(event.response);
         break;
       case "response.incomplete":
@@ -363,37 +397,134 @@ async function readSemanticSse(
     if (idleTimer) clearTimeout(idleTimer);
     reader.releaseLock();
   }
-  const candidates = [completedText, doneText, text]
-    .flatMap((candidate) => typeof candidate === "string" && candidate.trim() ? [candidate] : []);
+  const candidates = [
+    ["completed", completedText],
+    ["done", doneText],
+    ["delta", text]
+  ].flatMap(([source, candidate]) =>
+    typeof candidate === "string" && candidate.trim()
+      ? [{ source: source as "completed" | "done" | "delta", text: candidate }]
+      : []
+  );
   if (!completed || candidates.length === 0) {
     throw new LlmProviderInvalidOutputError("no_output_text");
   }
-  return { candidates, usage };
+  return {
+    candidates,
+    usage,
+    diagnosticUsage,
+    completed
+  };
 }
 
-function parseCandidateJson(text: string): unknown {
+function unwrapSingleJsonFence(text: string): string | undefined {
   const trimmed = text.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  return fenced ? fenced[1].trim() : undefined;
+}
+
+function repairBoundary(text: string): { document?: string; category?: "boundary_violation" } {
+  let document = text.trim();
+  const fenced = unwrapSingleJsonFence(document);
+  if (document.startsWith("```") && fenced === undefined) return { category: "boundary_violation" };
+  if (fenced !== undefined) document = fenced;
+  if (document.startsWith("\uFEFF")) document = document.slice(1).trimStart();
+  if (!document.startsWith("{") && !document.startsWith("[")) {
+    return { category: "boundary_violation" };
+  }
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = 0; index < document.length; index += 1) {
+    const character = document[index];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === '"') inString = false;
+      continue;
+    }
+    if (character === '"') inString = true;
+    else if (character === "{" || character === "[") depth += 1;
+    else if (character === "}" || character === "]") {
+      depth -= 1;
+      if (depth === 0 && document.slice(index + 1).trim()) {
+        return { category: "boundary_violation" };
+      }
+    }
+  }
+  return { document };
+}
+
+function repairedCandidate(text: string): unknown {
+  const boundary = repairBoundary(text);
+  if (!boundary.document) throw new Error(boundary.category);
+  return JSON.parse(jsonrepair(boundary.document));
+}
+
+function parseCandidateJson(text: string): { value: unknown; repaired: boolean } {
+  const trimmed = text.trim().replace(/^\uFEFF/, "");
+  const directDocument = unwrapSingleJsonFence(trimmed) ?? trimmed;
   try {
-    return JSON.parse(trimmed);
+    return { value: JSON.parse(directDocument), repaired: false };
   } catch {
-    const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-    if (!fenced) throw new LlmProviderInvalidOutputError("invalid_json");
     try {
-      return JSON.parse(fenced[1].trim());
+      return { value: repairedCandidate(text), repaired: true };
     } catch {
       throw new LlmProviderInvalidOutputError("invalid_json");
     }
   }
 }
 
-function parseCandidateCandidates(candidates: string[]): unknown {
+function characterTypes(text: string): Pick<SafeInvalidJsonLog,
+  "first_character_type" | "last_character_type"> {
+  const trimmed = text.trim();
+  const first = trimmed[0];
+  const last = trimmed.at(-1);
+  return {
+    first_character_type: !first ? "empty" : first === "\uFEFF" ? "bom" :
+      first === "{" ? "object" : first === "[" ? "array" :
+        trimmed.startsWith("```") ? "fence" : "other",
+    last_character_type: !last ? "empty" : last === "}" ? "object_end" :
+      last === "]" ? "array_end" : last === '"' ? "quote" : "other"
+  };
+}
+
+function validateRepairedCandidate(value: unknown): unknown {
+  const output = SongCandidateOutputSchema.safeParse(value);
+  if (!output.success || !SongCandidateSchema.safeParse(output.data).success) {
+    throw new LlmProviderInvalidOutputError("candidate_schema_failed");
+  }
+  return output.data;
+}
+
+function parseCandidateCandidates(
+  candidates: Array<{ source: "completed" | "done" | "delta"; text: string }>,
+  options: DeepSeekProviderOptions,
+  startedAt: number,
+  diagnostics: { output_tokens?: number; reasoning_tokens?: number; response_completed: boolean }
+): unknown {
   for (const candidate of candidates) {
     try {
-      return parseCandidateJson(candidate);
+      const parsed = parseCandidateJson(candidate.text);
+      return parsed.repaired ? validateRepairedCandidate(parsed.value) : parsed.value;
     } catch (error) {
       if (!(error instanceof LlmProviderInvalidOutputError) || error.reason !== "invalid_json") {
         throw error;
       }
+      const boundary = repairBoundary(candidate.text);
+      (options.log ?? defaultLog)({
+        event: "provider_invalid_json",
+        selected_source: candidate.source,
+        character_count: candidate.text.length,
+        ...characterTypes(candidate.text),
+        json_error_category: boundary.document ? "parse_and_repair_failed" : "boundary_violation",
+        ...(diagnostics.output_tokens === undefined ? {} : { output_tokens: diagnostics.output_tokens }),
+        ...(diagnostics.reasoning_tokens === undefined ? {} : {
+          reasoning_tokens: diagnostics.reasoning_tokens
+        }),
+        response_completed: diagnostics.response_completed,
+        elapsed_ms: Math.max(0, Date.now() - startedAt)
+      });
     }
   }
   throw new LlmProviderInvalidOutputError("invalid_json");
@@ -428,7 +559,8 @@ export class DeepSeekProvider implements LlmProvider {
           model: DEEPSEEK_MODEL,
           instructions: instructions(),
           input: JSON.stringify(query),
-          reasoning: { effort: "low" },
+          reasoning: { effort: "none" },
+          temperature: 0,
           max_output_tokens: MAX_OUTPUT_TOKENS,
           stream: true,
           tools: [{ type: "web_search" }],
@@ -445,7 +577,12 @@ export class DeepSeekProvider implements LlmProvider {
       });
       if (!response.ok) throw await errorForResponse(response);
       const streamed = await readSemanticSse(response, controller, this.idleTimeoutMs);
-      const candidate = parseCandidateCandidates(streamed.candidates);
+      const candidate = parseCandidateCandidates(
+        streamed.candidates,
+        this.options,
+        startedAt,
+        { ...streamed.diagnosticUsage, response_completed: streamed.completed }
+      );
       return {
         ...(candidate as Record<string, unknown>),
         ...(streamed.usage ? { usage: streamed.usage } : {})
