@@ -2,7 +2,6 @@ import { z } from "zod";
 import { jsonrepair } from "jsonrepair";
 import {
   SongCandidateOutputSchema,
-  SongCandidateSchema,
   type SongQuery
 } from "../../src/lib/song-candidate-schema";
 import {
@@ -18,6 +17,9 @@ const DEFAULT_TIMEOUT_MS = 300_000;
 const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
 const MAX_OUTPUT_TOKENS = 32_000;
 const SAFE_FIELD = /^[a-zA-Z0-9_.:-]{1,100}$/;
+// This schema is immutable. Building it once per isolate avoids repeating the
+// deepest Zod traversal on every API request.
+const SONG_CANDIDATE_JSON_SCHEMA = z.toJSONSchema(SongCandidateOutputSchema);
 
 export interface SafeNetworkLog {
   event: "provider_fetch_error";
@@ -648,7 +650,7 @@ function characterTypes(text: string): Pick<SafeInvalidJsonLog,
 
 function validateRepairedCandidate(value: unknown): unknown {
   const output = SongCandidateOutputSchema.safeParse(value);
-  if (!output.success || !SongCandidateSchema.safeParse(output.data).success) {
+  if (!output.success) {
     throw new LlmProviderInvalidOutputError("candidate_schema_failed");
   }
   return output.data;
@@ -729,7 +731,7 @@ export class DeepSeekProvider implements LlmProvider {
             format: {
               type: "json_schema",
               name: "song_candidate",
-              schema: z.toJSONSchema(SongCandidateOutputSchema)
+              schema: SONG_CANDIDATE_JSON_SCHEMA
             }
           }
         }),
