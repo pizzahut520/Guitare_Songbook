@@ -39,7 +39,24 @@ export interface SafeInvalidJsonLog {
   elapsed_ms: number;
 }
 
-export type SafeProviderLog = SafeNetworkLog | SafeInvalidJsonLog;
+export interface SafeNoOutputLog {
+  event: "provider_no_output_text";
+  response_final_status: "completed" | "missing";
+  output_text_delta_events: number;
+  output_text_done_events: number;
+  content_part_done_events: number;
+  output_item_done_events: number;
+  unknown_semantic_events: number;
+  delta_character_count: number;
+  done_character_count: number;
+  content_part_character_count: number;
+  output_item_character_count: number;
+  output_tokens?: number;
+  reasoning_tokens?: number;
+  elapsed_ms: number;
+}
+
+export type SafeProviderLog = SafeNetworkLog | SafeInvalidJsonLog | SafeNoOutputLog;
 
 export interface DeepSeekProviderOptions {
   fetch?: typeof fetch;
@@ -306,7 +323,9 @@ function assistantTextFromCompleted(response: SemanticEvent["response"]): string
 async function readSemanticSse(
   response: Response,
   controller: AbortController,
-  idleTimeoutMs: number
+  idleTimeoutMs: number,
+  options: DeepSeekProviderOptions,
+  startedAt: number
 ) {
   if (!response.body) {
     throw new LlmProviderInvalidOutputError("no_response_body");
@@ -322,6 +341,13 @@ async function readSemanticSse(
   let completed = false;
   let usage: ReturnType<typeof cleanUsage>;
   let diagnosticUsage: { output_tokens?: number; reasoning_tokens?: number } = {};
+  const eventCounts = {
+    outputTextDelta: 0,
+    outputTextDone: 0,
+    contentPartDone: 0,
+    outputItemDone: 0,
+    unknown: 0
+  };
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   const resetIdle = () => {
     if (idleTimer) clearTimeout(idleTimer);
@@ -354,15 +380,18 @@ async function readSemanticSse(
         if (typeof event.delta !== "string") {
           throw new LlmProviderInvalidOutputError("malformed_sse");
         }
+        eventCounts.outputTextDelta += 1;
         text += event.delta;
         break;
       case "response.output_text.done":
         if (typeof event.text !== "string") {
           throw new LlmProviderInvalidOutputError("malformed_sse");
         }
+        eventCounts.outputTextDone += 1;
         doneText = event.text;
         break;
       case "response.content_part.done": {
+        eventCounts.contentPartDone += 1;
         if (event.part?.type !== "output_text") break;
         if (event.part.status !== undefined && event.part.status !== "completed") {
           throw incompleteOutputError(event.part.incomplete_details?.reason);
@@ -376,6 +405,7 @@ async function readSemanticSse(
         break;
       }
       case "response.output_item.done": {
+        eventCounts.outputItemDone += 1;
         if (event.item?.type !== "message" || event.item.role !== "assistant") break;
         if (event.item.status !== "completed") {
           throw incompleteOutputError(event.item.incomplete_details?.reason);
@@ -430,6 +460,7 @@ async function readSemanticSse(
         throw new LlmProviderInvalidOutputError("response_failed");
       default:
         // Other valid semantic events, including reasoning, are deliberately discarded.
+        eventCounts.unknown += 1;
         break;
     }
   };
@@ -475,6 +506,28 @@ async function readSemanticSse(
       : []
   );
   if (!completed || candidates.length === 0) {
+    if (completed && candidates.length === 0) {
+      (options.log ?? defaultLog)({
+        event: "provider_no_output_text",
+        response_final_status: completed ? "completed" : "missing",
+        output_text_delta_events: eventCounts.outputTextDelta,
+        output_text_done_events: eventCounts.outputTextDone,
+        content_part_done_events: eventCounts.contentPartDone,
+        output_item_done_events: eventCounts.outputItemDone,
+        unknown_semantic_events: eventCounts.unknown,
+        delta_character_count: text.length,
+        done_character_count: doneText?.length ?? 0,
+        content_part_character_count: contentPartText.length,
+        output_item_character_count: outputItemText.length,
+        ...(diagnosticUsage.output_tokens === undefined ? {} : {
+          output_tokens: diagnosticUsage.output_tokens
+        }),
+        ...(diagnosticUsage.reasoning_tokens === undefined ? {} : {
+          reasoning_tokens: diagnosticUsage.reasoning_tokens
+        }),
+        elapsed_ms: Math.max(0, Date.now() - startedAt)
+      });
+    }
     throw new LlmProviderInvalidOutputError("no_output_text");
   }
   return {
@@ -644,7 +697,13 @@ export class DeepSeekProvider implements LlmProvider {
         signal: controller.signal
       });
       if (!response.ok) throw await errorForResponse(response);
-      const streamed = await readSemanticSse(response, controller, this.idleTimeoutMs);
+      const streamed = await readSemanticSse(
+        response,
+        controller,
+        this.idleTimeoutMs,
+        this.options,
+        startedAt
+      );
       const candidate = parseCandidateCandidates(
         streamed.candidates,
         this.options,

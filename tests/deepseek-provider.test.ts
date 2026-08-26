@@ -441,6 +441,20 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
     await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
       reason: "no_output_text"
     });
+    expect(log).toHaveBeenCalledWith({
+      event: "provider_no_output_text",
+      response_final_status: "completed",
+      output_text_delta_events: 0,
+      output_text_done_events: 0,
+      content_part_done_events: 0,
+      output_item_done_events: 0,
+      unknown_semantic_events: 0,
+      delta_character_count: 0,
+      done_character_count: 0,
+      content_part_character_count: 0,
+      output_item_character_count: 0,
+      elapsed_ms: expect.any(Number)
+    });
     expect(JSON.stringify(log.mock.calls)).not.toContain("must stay private");
   });
 
