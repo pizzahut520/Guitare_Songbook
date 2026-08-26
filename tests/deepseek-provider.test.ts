@@ -46,6 +46,25 @@ function hangingResponse(signal: AbortSignal, initial = "") {
 }
 
 describe("DeepSeek semantic SSE provider with mocked fetch", () => {
+  it("invokes fetch without binding the provider instance as receiver", async () => {
+    let receiver: unknown = "not-called";
+    const receiverSensitiveFetch = async function (
+      this: unknown,
+      _input: RequestInfo | URL,
+      _init?: RequestInit
+    ) {
+      receiver = this;
+      if (this instanceof DeepSeekProvider) throw new TypeError("Illegal invocation");
+      return responseFromText(successfulSse());
+    } as typeof fetch;
+    const provider = new DeepSeekProvider("test-only-key", { fetch: receiverSensitiveFetch });
+
+    await expect(provider.generateSongCandidate({ title: "星尘邮局" })).resolves.toMatchObject({
+      song: { title: "星尘邮局" }
+    });
+    expect(receiver).not.toBe(provider);
+  });
+
   it("uses streaming Responses API, forced web search, JSON Schema, and 8000 tokens", async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
       responseFromText(successfulSse())

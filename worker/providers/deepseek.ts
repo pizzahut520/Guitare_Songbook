@@ -310,7 +310,10 @@ export class DeepSeekProvider implements LlmProvider {
     const startedAt = Date.now();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetchImplementation(`${DEEPSEEK_BASE_URL}/responses`, {
+      // Cloudflare's native fetch is a host function and must not receive this provider
+      // instance as its receiver. Detach it before invocation.
+      const fetchImplementation = this.fetchImplementation;
+      const response = await fetchImplementation(`${DEEPSEEK_BASE_URL}/responses`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${this.apiKey}`,
