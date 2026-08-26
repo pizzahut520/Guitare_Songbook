@@ -46,6 +46,14 @@ export interface SafeNoOutputLog {
   output_text_done_events: number;
   content_part_done_events: number;
   output_item_done_events: number;
+  output_item_message_events: number;
+  output_item_web_search_events: number;
+  output_item_reasoning_events: number;
+  output_item_other_events: number;
+  completed_response_message_items: number;
+  completed_response_web_search_items: number;
+  completed_response_reasoning_items: number;
+  completed_response_other_items: number;
   unknown_semantic_events: number;
   delta_character_count: number;
   done_character_count: number;
@@ -346,7 +354,17 @@ async function readSemanticSse(
     outputTextDone: 0,
     contentPartDone: 0,
     outputItemDone: 0,
+    outputItemMessage: 0,
+    outputItemWebSearch: 0,
+    outputItemReasoning: 0,
+    outputItemOther: 0,
     unknown: 0
+  };
+  const completedResponseItems = {
+    message: 0,
+    webSearch: 0,
+    reasoning: 0,
+    other: 0
   };
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   const resetIdle = () => {
@@ -406,6 +424,10 @@ async function readSemanticSse(
       }
       case "response.output_item.done": {
         eventCounts.outputItemDone += 1;
+        if (event.item?.type === "message") eventCounts.outputItemMessage += 1;
+        else if (event.item?.type === "web_search_call") eventCounts.outputItemWebSearch += 1;
+        else if (event.item?.type === "reasoning") eventCounts.outputItemReasoning += 1;
+        else eventCounts.outputItemOther += 1;
         if (event.item?.type !== "message" || event.item.role !== "assistant") break;
         if (event.item.status !== "completed") {
           throw incompleteOutputError(event.item.incomplete_details?.reason);
@@ -442,6 +464,12 @@ async function readSemanticSse(
         }
         completed = true;
         usage = cleanUsage(event.response?.usage);
+        for (const item of event.response?.output ?? []) {
+          if (item.type === "message") completedResponseItems.message += 1;
+          else if (item.type === "web_search_call") completedResponseItems.webSearch += 1;
+          else if (item.type === "reasoning") completedResponseItems.reasoning += 1;
+          else completedResponseItems.other += 1;
+        }
         diagnosticUsage = {
           output_tokens: Number.isInteger(event.response?.usage?.output_tokens)
             ? event.response?.usage?.output_tokens as number
@@ -514,6 +542,14 @@ async function readSemanticSse(
         output_text_done_events: eventCounts.outputTextDone,
         content_part_done_events: eventCounts.contentPartDone,
         output_item_done_events: eventCounts.outputItemDone,
+        output_item_message_events: eventCounts.outputItemMessage,
+        output_item_web_search_events: eventCounts.outputItemWebSearch,
+        output_item_reasoning_events: eventCounts.outputItemReasoning,
+        output_item_other_events: eventCounts.outputItemOther,
+        completed_response_message_items: completedResponseItems.message,
+        completed_response_web_search_items: completedResponseItems.webSearch,
+        completed_response_reasoning_items: completedResponseItems.reasoning,
+        completed_response_other_items: completedResponseItems.other,
         unknown_semantic_events: eventCounts.unknown,
         delta_character_count: text.length,
         done_character_count: doneText?.length ?? 0,
