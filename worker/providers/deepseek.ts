@@ -281,6 +281,7 @@ export async function probeDeepSeekResponses(
 function instructions(): string {
   return [
     "Return JSON only and conform exactly to the supplied JSON Schema.",
+    "The first output character must be { and the last output character must be }; never add a preface or epilogue.",
     "You must use web_search at least once to identify the correct song and version before drafting the final JSON.",
     "Find and cross-check title, artist, credits, original key, playable degree key, capo, lyrics, chords, and section structure.",
     "Represent chords as scale degrees compatible with the existing song schema.",
@@ -781,7 +782,8 @@ export class DeepSeekProvider implements LlmProvider {
             format: {
               type: "json_schema",
               name: "song_candidate",
-              schema: SONG_CANDIDATE_JSON_SCHEMA
+              schema: SONG_CANDIDATE_JSON_SCHEMA,
+              strict: true
             }
           }
         }),

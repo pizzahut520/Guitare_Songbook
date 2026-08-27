@@ -101,10 +101,11 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
       temperature: 0,
       tools: [{ type: "web_search" }],
       tool_choice: "auto",
-      text: { format: { type: "json_schema", name: "song_candidate" } }
+      text: { format: { type: "json_schema", name: "song_candidate", strict: true } }
     });
     expect(body.instructions).toContain("Never use Roman numerals.");
     expect(body.instructions).toContain("You must use web_search at least once");
+    expect(body.instructions).toContain("The first output character must be {");
     expect(body.instructions).toContain("Never put absolute chord names in degree fields.");
     expect(body.instructions).toContain("Use Arabic scale degrees only.");
     expect(body.instructions).toContain(
