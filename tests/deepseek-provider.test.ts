@@ -101,7 +101,7 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
       temperature: 0,
       tools: [{ type: "web_search" }],
       tool_choice: "auto",
-      text: { format: { type: "json_schema", name: "song_candidate", strict: true } }
+      text: { format: { type: "json_schema", name: "song_candidate" } }
     });
     expect(body.instructions).toContain("Never use Roman numerals.");
     expect(body.instructions).toContain("You must use web_search at least once");

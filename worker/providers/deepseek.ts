@@ -791,8 +791,7 @@ export class DeepSeekProvider implements LlmProvider {
             format: {
               type: "json_schema",
               name: "song_candidate",
-              schema: SONG_CANDIDATE_JSON_SCHEMA,
-              strict: true
+              schema: SONG_CANDIDATE_JSON_SCHEMA
             }
           }
         }),
