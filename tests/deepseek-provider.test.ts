@@ -630,6 +630,7 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
   });
 
   it("preserves safe upstream metadata without retaining the raw body", async () => {
+    const log = vi.fn();
     const fetchMock = vi.fn(async () => Response.json({
       error: {
         code: "insufficient_balance",
@@ -637,13 +638,23 @@ describe("DeepSeek semantic SSE provider with mocked fetch", () => {
         message: "raw provider detail must not be retained"
       }
     }, { status: 402 }));
-    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock });
+    const provider = new DeepSeekProvider("test-only-key", { fetch: fetchMock, log });
     await expect(provider.generateSongCandidate({ title: "星尘邮局" })).rejects.toMatchObject({
       upstreamStatus: 402,
       providerErrorCode: "insufficient_balance",
       providerErrorType: "billing_error",
       message: "DeepSeek request failed"
     });
+    expect(log).toHaveBeenCalledWith({
+      event: "provider_upstream_response",
+      endpoint: "responses_generate",
+      http_status: 402,
+      error_code: "insufficient_balance",
+      error_type: "billing_error",
+      elapsed_ms: expect.any(Number)
+    });
+    expect(JSON.stringify(log.mock.calls)).not.toContain("raw provider detail");
+    expect(JSON.stringify(log.mock.calls)).not.toContain("test-only-key");
   });
 
   it("logs only the safe network error structure", async () => {

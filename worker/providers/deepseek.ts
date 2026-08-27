@@ -76,8 +76,17 @@ export interface SafeIncompleteResponseLog {
   elapsed_ms: number;
 }
 
+export interface SafeUpstreamResponseLog {
+  event: "provider_upstream_response";
+  endpoint: "responses_generate";
+  http_status: number;
+  error_code?: string;
+  error_type?: string;
+  elapsed_ms: number;
+}
+
 export type SafeProviderLog = SafeNetworkLog | SafeInvalidJsonLog | SafeNoOutputLog |
-  SafeIncompleteResponseLog;
+  SafeIncompleteResponseLog | SafeUpstreamResponseLog;
 
 export interface DeepSeekProviderOptions {
   fetch?: typeof fetch;
@@ -789,7 +798,22 @@ export class DeepSeekProvider implements LlmProvider {
         }),
         signal: controller.signal
       });
-      if (!response.ok) throw await errorForResponse(response);
+      if (!response.ok) {
+        const upstreamError = await errorForResponse(response);
+        (this.options.log ?? defaultLog)({
+          event: "provider_upstream_response",
+          endpoint: "responses_generate",
+          http_status: response.status,
+          ...(upstreamError.providerErrorCode ? {
+            error_code: upstreamError.providerErrorCode
+          } : {}),
+          ...(upstreamError.providerErrorType ? {
+            error_type: upstreamError.providerErrorType
+          } : {}),
+          elapsed_ms: Math.max(0, Date.now() - startedAt)
+        });
+        throw upstreamError;
+      }
       const streamed = await readSemanticSse(
         response,
         controller,
