@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { jsonrepair } from "jsonrepair";
+import songCandidateJsonSchema from "../generated/song-candidate-output-schema.json";
 import {
   SongCandidateOutputSchema,
   type SongQuery
@@ -17,9 +17,10 @@ const DEFAULT_TIMEOUT_MS = 300_000;
 const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
 const MAX_OUTPUT_TOKENS = 32_000;
 const SAFE_FIELD = /^[a-zA-Z0-9_.:-]{1,100}$/;
-// This schema is immutable. Building it once per isolate avoids repeating the
-// deepest Zod traversal on every API request.
-const SONG_CANDIDATE_JSON_SCHEMA = z.toJSONSchema(SongCandidateOutputSchema);
+// This immutable schema is generated at build time. Traversing the complete
+// Zod song schema inside a cold Worker request can exhaust Cloudflare's CPU
+// allowance before the upstream stream has been handled.
+const SONG_CANDIDATE_JSON_SCHEMA = songCandidateJsonSchema;
 
 export interface SafeNetworkLog {
   event: "provider_fetch_error";
@@ -364,7 +365,7 @@ async function readSemanticSse(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  let text = "";
+  const textParts: string[] = [];
   let doneText: string | undefined;
   const completedContentParts = new Map<string, string>();
   const completedOutputItems = new Map<number, string>();
@@ -443,7 +444,7 @@ async function readSemanticSse(
           throw new LlmProviderInvalidOutputError("malformed_sse");
         }
         eventCounts.outputTextDelta += 1;
-        text += event.delta;
+        textParts.push(event.delta);
         break;
       case "response.output_text.done":
         if (typeof event.text !== "string") {
@@ -574,6 +575,7 @@ async function readSemanticSse(
     if (idleTimer) clearTimeout(idleTimer);
     reader.releaseLock();
   }
+  const text = textParts.join("");
   const contentPartText = [...completedContentParts.entries()]
     .sort(([left], [right]) => {
       const [leftOutput, leftContent] = left.split(":").map(Number);

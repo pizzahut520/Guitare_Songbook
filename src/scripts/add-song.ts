@@ -404,6 +404,21 @@ function errorMessage(httpStatus: number, payload: unknown): string {
   return "生成失败，请检查输入后重试。";
 }
 
+async function readApiJson(response: Response): Promise<unknown> {
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.includes("application/json")) {
+    if (response.status >= 500) {
+      throw new Error("歌曲生成服务在边缘节点被中断，请稍后重试。\n错误码：provider_edge_error");
+    }
+    throw new Error("服务器返回了非 JSON 响应，请刷新页面后重试。\n错误码：invalid_server_response");
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw new Error("服务器返回的 JSON 不完整，请稍后重试。\n错误码：invalid_server_response");
+  }
+}
+
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const data = new FormData(form);
@@ -434,7 +449,7 @@ form?.addEventListener("submit", async (event) => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ title, ...(artist ? { artist } : {}) })
     });
-    const payload: unknown = await response.json();
+    const payload = await readApiJson(response);
     if (!response.ok) throw new Error(errorMessage(response.status, payload));
     const candidate = SongCandidateSchema.safeParse(payload);
     if (!candidate.success) throw new Error("候选未通过浏览器端数据校验。\n错误码：invalid_candidate");

@@ -1,0 +1,426 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "artist": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "additionalProperties": false
+    },
+    "matched_song": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "artist": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "title",
+        "artist",
+        "confidence"
+      ],
+      "additionalProperties": false
+    },
+    "song": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "number",
+          "const": 1
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artist": {
+          "type": "string",
+          "minLength": 1
+        },
+        "credits": {
+          "type": "object",
+          "properties": {
+            "lyrics": {
+              "type": "string",
+              "minLength": 1
+            },
+            "music": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "lyrics",
+            "music"
+          ],
+          "additionalProperties": false
+        },
+        "original_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "degree_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capo": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tags": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "web_search"
+            },
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        "copyright_status": {
+          "type": "string",
+          "const": "private_reference"
+        },
+        "blocks": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "instrument"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "progression": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^(?:\\s*(?:\\|+|-|[♭♯]?[1-7](?:m\\(maj7\\)|m7♭5|maj7|m11|m7|m6|7sus4|7sus2|sus4|sus2|add9|m|\\(7\\)|7|6)?(?:\\/[♭♯]?[1-7])?))+\\s*$"
+                  },
+                  "repeat": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "label",
+                  "progression"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "lyric"
+                  },
+                  "chords": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^(?:\\s*(?:\\|+|-|[♭♯]?[1-7](?:m\\(maj7\\)|m7♭5|maj7|m11|m7|m6|7sus4|7sus2|sus4|sus2|add9|m|\\(7\\)|7|6)?(?:\\/[♭♯]?[1-7])?))+\\s*$"
+                    }
+                  },
+                  "lyrics": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "lyric_sets": {
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "variant_labels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "widths": {
+                    "type": "array",
+                    "items": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "section_role": {
+                    "type": "string",
+                    "enum": [
+                      "verse",
+                      "pre_chorus",
+                      "chorus",
+                      "bridge",
+                      "outro",
+                      "other"
+                    ]
+                  },
+                  "section_label": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "spacing": {
+                    "default": "normal",
+                    "type": "string",
+                    "enum": [
+                      "compact",
+                      "normal",
+                      "generous"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "chords",
+                  "spacing"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "repeat"
+                  },
+                  "ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "times": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8
+                  },
+                  "section_label": {
+                    "type": "string",
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "ref",
+                  "times"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "theory_legend"
+                  },
+                  "title": {
+                    "default": "和弦结构（相对根音）",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "quality": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "formula": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "quality",
+                        "formula"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "type",
+                  "title",
+                  "items"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "slug",
+        "title",
+        "artist",
+        "credits",
+        "original_key",
+        "degree_key",
+        "capo",
+        "language",
+        "tags",
+        "source",
+        "copyright_status",
+        "blocks"
+      ],
+      "additionalProperties": false
+    },
+    "sources": {
+      "minItems": 1,
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "metadata",
+              "lyrics",
+              "chords",
+              "reference",
+              "other"
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "source_type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "maxItems": 30,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    },
+    "uncertain_fields": {
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      }
+    }
+  },
+  "required": [
+    "query",
+    "matched_song",
+    "song",
+    "sources",
+    "warnings",
+    "uncertain_fields"
+  ],
+  "additionalProperties": false
+}
