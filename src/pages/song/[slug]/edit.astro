@@ -1,0 +1,84 @@
+---
+import { getCollection } from "astro:content";
+import SideNav from "../../../components/SideNav.astro";
+import SongEditorWorkspace from "../../../components/SongEditorWorkspace.astro";
+import AppLayout from "../../../layouts/AppLayout.astro";
+
+export async function getStaticPaths() {
+  const songs = await getCollection("songs");
+  return songs.map((song) => ({
+    params: { slug: song.data.slug },
+    props: { song, songs }
+  }));
+}
+
+const { song, songs } = Astro.props;
+const data = song.data;
+---
+
+<AppLayout title={`编辑《${data.title}》 | Guitare Songbook`} description="安全编辑已发布曲谱">
+  <div class="app-shell">
+    <SideNav songs={songs} currentSlug={data.slug} />
+    <main class="add-main">
+      <header class="mobile-topbar">
+        <button class="icon-button" type="button" data-open-nav aria-label="打开歌曲目录">☰</button>
+        <strong>编辑曲谱</strong>
+        <span aria-hidden="true"></span>
+      </header>
+
+      <div class="add-page edit-song-page" data-edit-root data-song-slug={data.slug}>
+        <header class="add-page__header">
+          <p class="eyebrow">PHASE 2D · SAFE UPDATE</p>
+          <h1>编辑《{data.title}》</h1>
+          <p>{data.artist} · 文件标识与 slug 保持不变。编辑不会调用 DeepSeek 或其他 AI。</p>
+          <a class="back-link" href={`/song/${data.slug}/`}>← 取消并返回正式曲谱</a>
+        </header>
+
+        <p class="add-status is-loading" data-generate-status role="status" aria-live="polite">
+          正在安全载入 GitHub 当前版本与文件 SHA…
+        </p>
+
+        <section class="candidate-panel edit-candidate-panel" data-candidate hidden aria-labelledby="edit-workspace-title">
+          <div class="candidate-heading">
+            <div>
+              <p class="eyebrow">PUBLISHED SONG</p>
+              <h2 id="edit-workspace-title" data-candidate-title>{data.title}</h2>
+              <p data-candidate-artist>{data.artist}</p>
+            </div>
+            <span>标题、艺术家、slug 与文件路径只读</span>
+          </div>
+
+          <SongEditorWorkspace />
+
+          <section class="edit-diff" aria-labelledby="edit-diff-title">
+            <h3 id="edit-diff-title">保存前差异摘要</h3>
+            <p data-edit-diff-empty>尚未修改曲谱。</p>
+            <ul data-edit-diff></ul>
+          </section>
+
+          <details class="candidate-json">
+            <summary>查看编辑后的 candidate JSON</summary>
+            <pre data-candidate-json></pre>
+          </details>
+
+          <label class="publish-confirmation">
+            <input type="checkbox" data-publish-confirm disabled />
+            <span>我已核对全部修改、重复引用、和弦位置、歌词和本地差异摘要。</span>
+          </label>
+          <p class="publish-config" data-publish-config>正在检查 GitHub 写入配置…</p>
+          <div class="edit-submit-actions">
+            <a class="editor-button" data-cancel-edit href={`/song/${data.slug}/`}>取消编辑</a>
+            <button class="primary-button" type="button" data-publish-button disabled>更新现有歌曲</button>
+          </div>
+          <div class="publish-result" data-publish-result hidden aria-live="polite">
+            <strong>曲谱更新已提交，正在等待自动部署。</strong>
+            <p>预计稍后出现在正式歌曲页。</p>
+            <a data-publish-commit target="_blank" rel="noreferrer noopener">查看 GitHub commit</a>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script src="../../../scripts/app-shell.ts"></script>
+  <script src="../../../scripts/add-song.ts"></script>
+</AppLayout>

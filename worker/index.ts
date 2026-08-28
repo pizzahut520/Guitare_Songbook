@@ -4,7 +4,8 @@ import {
   type SongQuery
 } from "../src/lib/song-candidate-schema";
 import { findDuplicateSong, SongIndexSchema } from "../src/lib/song-index";
-import { DEGREE_NOTATION_ERROR } from "../src/lib/song-schema";
+import { publishedSongToCandidate } from "../src/lib/published-song-edit";
+import { DEGREE_NOTATION_ERROR, SongSchema } from "../src/lib/song-schema";
 import { z } from "zod";
 import {
   checkDeepSeekStatus,
@@ -28,7 +29,8 @@ import {
   GitHubContentsProvider,
   GitHubProviderError,
   type GitHubPublishResult,
-  type GitHubRepositoryStatus
+  type GitHubRepositoryStatus,
+  type GitHubSongRevision
 } from "./providers/github";
 
 const MAX_REQUEST_BODY_BYTES = 2_048;
@@ -59,6 +61,11 @@ interface WorkerDependencies {
   createGitHubProvider(token: string, repository: string, branch: string): {
     createSong(song: z.infer<typeof SongCandidateSchema>["song"]): Promise<GitHubPublishResult>;
     checkRepositoryStatus(): Promise<GitHubRepositoryStatus>;
+    getSongRevision?(slug: string): Promise<GitHubSongRevision>;
+    updateSong?(
+      song: z.infer<typeof SongCandidateSchema>["song"],
+      expectedSha: string
+    ): Promise<GitHubPublishResult>;
   };
   verifyAccess: AccessVerifier;
 }
@@ -132,6 +139,14 @@ async function readLimitedBody(
 
 const PublishRequestSchema = z.object({
   candidate: SongCandidateSchema,
+  confirmed: z.literal(true)
+}).strict();
+
+const SongIdSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+const UpdateSongRequestSchema = z.object({
+  candidate: SongCandidateSchema,
+  song_id: SongIdSchema,
+  expected_sha: z.string().regex(/^[a-f0-9]{7,64}$/i),
   confirmed: z.literal(true)
 }).strict();
 
@@ -210,6 +225,100 @@ async function publishSong(
       return errorResponse(502, "github_upstream_error", "GitHub 写入失败");
     }
     return githubErrorResponse(error);
+  }
+}
+
+async function editableSong(
+  request: Request,
+  env: Env,
+  dependencies: WorkerDependencies,
+  slug: string
+): Promise<Response> {
+  const parsedSlug = SongIdSchema.safeParse(slug);
+  if (!parsedSlug.success) return errorResponse(400, "invalid_request", "歌曲标识无效");
+  const githubToken = env.GITHUB_TOKEN?.trim();
+  if (!githubToken) return errorResponse(503, "github_not_configured", "GitHub 写入尚未配置");
+  const repository = env.GITHUB_REPOSITORY?.trim() || DEFAULT_GITHUB_REPOSITORY;
+  const branch = env.GITHUB_BRANCH?.trim() || DEFAULT_GITHUB_BRANCH;
+  try {
+    const provider = dependencies.createGitHubProvider(githubToken, repository, branch);
+    if (!provider.getSongRevision) {
+      return errorResponse(502, "github_upstream_error", "无法读取当前歌曲版本");
+    }
+    const revision = await provider.getSongRevision(parsedSlug.data);
+    const song = SongSchema.safeParse(revision.song);
+    if (!song.success || song.data.slug !== parsedSlug.data) {
+      return errorResponse(502, "github_upstream_error", "当前歌曲文件无效");
+    }
+    const pageUrl = new URL(`/song/${parsedSlug.data}/`, request.url).toString();
+    return jsonResponse({
+      candidate: publishedSongToCandidate(song.data, pageUrl),
+      expected_sha: revision.sha
+    });
+  } catch (error) {
+    if (error instanceof GitHubProviderError) return githubErrorResponse(error);
+    return errorResponse(502, "github_upstream_error", "无法读取当前歌曲版本");
+  }
+}
+
+async function updateExistingSong(
+  request: Request,
+  env: Env,
+  dependencies: WorkerDependencies
+): Promise<Response> {
+  const githubToken = env.GITHUB_TOKEN?.trim();
+  if (!githubToken) return errorResponse(503, "github_not_configured", "GitHub 写入尚未配置");
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readLimitedBody(request, MAX_PUBLISH_BODY_BYTES));
+  } catch {
+    return errorResponse(400, "invalid_candidate", "更新内容无效");
+  }
+  const parsed = UpdateSongRequestSchema.safeParse(payload);
+  if (!parsed.success) {
+    const degreeIssues = invalidDegreeIssues(parsed.error);
+    if (degreeIssues.length > 0) {
+      return errorResponse(400, "invalid_degree_notation", "级数记法不合法", { issues: degreeIssues });
+    }
+    return errorResponse(400, "invalid_candidate", "更新内容无效", {
+      issues: safeValidationIssues(parsed.error)
+    });
+  }
+  if (parsed.data.candidate.song.slug !== parsed.data.song_id) {
+    return errorResponse(400, "invalid_candidate", "歌曲标识不可修改", {
+      issues: [{ path: "candidate.song.slug", code: "custom" }]
+    });
+  }
+  const repository = env.GITHUB_REPOSITORY?.trim() || DEFAULT_GITHUB_REPOSITORY;
+  const branch = env.GITHUB_BRANCH?.trim() || DEFAULT_GITHUB_BRANCH;
+  try {
+    const provider = dependencies.createGitHubProvider(githubToken, repository, branch);
+    if (!provider.getSongRevision || !provider.updateSong) {
+      return errorResponse(502, "github_upstream_error", "GitHub 更新服务不可用");
+    }
+    const revision = await provider.getSongRevision(parsed.data.song_id);
+    const current = SongSchema.safeParse(revision.song);
+    if (!current.success || current.data.slug !== parsed.data.song_id) {
+      return errorResponse(502, "github_upstream_error", "当前歌曲文件无效");
+    }
+    if (revision.sha !== parsed.data.expected_sha) {
+      return errorResponse(409, "github_conflict", "歌曲在编辑期间已发生变化，请重新载入并检查差异");
+    }
+    if (
+      parsed.data.candidate.song.title !== current.data.title ||
+      parsed.data.candidate.song.artist !== current.data.artist
+    ) {
+      return errorResponse(400, "invalid_candidate", "标题和艺术家在本阶段不可修改", {
+        issues: [{ path: "candidate.song.title", code: "custom" }]
+      });
+    }
+    return jsonResponse(
+      await provider.updateSong(parsed.data.candidate.song, parsed.data.expected_sha),
+      200
+    );
+  } catch (error) {
+    if (error instanceof GitHubProviderError) return githubErrorResponse(error);
+    return errorResponse(502, "github_upstream_error", "GitHub 更新失败");
   }
 }
 
@@ -454,6 +563,21 @@ export function createWorker(
           return errorResponse(400, "invalid_request", "该接口只接受 POST");
         }
         return publishSong(request, env, workerDependencies);
+      }
+
+      const editMatch = pathname.match(/^\/api\/songs\/([a-z0-9]+(?:-[a-z0-9]+)*)\/edit$/);
+      if (editMatch) {
+        if (request.method !== "GET") {
+          return errorResponse(400, "invalid_request", "该接口只接受 GET");
+        }
+        return editableSong(request, env, workerDependencies, editMatch[1]);
+      }
+
+      if (pathname === "/api/songs/update") {
+        if (request.method !== "POST") {
+          return errorResponse(400, "invalid_request", "该接口只接受 POST");
+        }
+        return updateExistingSong(request, env, workerDependencies);
       }
 
       return jsonResponse({ status: "not_implemented" }, 501);

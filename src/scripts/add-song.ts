@@ -7,14 +7,20 @@ import {
 import { createPublishGuard } from "../lib/publish-guard";
 import {
   addLyricPhrase,
+  addLyricBlock,
+  addInstrumentBlock,
   applyCandidateSongEdit,
   deleteBlock,
   deleteLyricPhrase,
   expandRepeatBlock,
   markBlockAsRepeat,
+  mergeLyricPhrases,
   mergeAdjacentLyricBlocks,
+  moveLyricChord,
   moveBlock,
   splitLyricBlock,
+  splitLyricPhraseAt,
+  summarizeSongChanges,
   updateBlock,
   updateLyricPhrase,
   type EditableSong
@@ -40,6 +46,12 @@ const preview = document.querySelector<HTMLElement>("[data-song-preview]");
 const previewViewport = document.querySelector<HTMLElement>("[data-preview-viewport]");
 const previewMode = document.querySelector<HTMLSelectElement>("[data-preview-mode]");
 const previewTransposeValue = document.querySelector<HTMLElement>("[data-preview-transpose]");
+const editRoot = document.querySelector<HTMLElement>("[data-edit-root]");
+const editSlug = editRoot?.dataset.songSlug;
+const editDiff = document.querySelector<HTMLUListElement>("[data-edit-diff]");
+const editDiffEmpty = document.querySelector<HTMLElement>("[data-edit-diff-empty]");
+const cancelEdit = document.querySelector<HTMLAnchorElement>("[data-cancel-edit]");
+const isEditMode = Boolean(editRoot && editSlug);
 let publishGuard = createPublishGuard();
 
 let currentCandidate: SongCandidate | undefined;
@@ -50,6 +62,9 @@ let githubConfigured = false;
 let songIndexPromise: Promise<SongIndexEntry[]> | undefined;
 let previewTranspose = 0;
 let previewHarmonyMode: "degree" | "chord" = "degree";
+let expectedSha: string | undefined;
+let originalCandidate: SongCandidate | undefined;
+let editDirty = false;
 
 function setText(selector: string, value: string | number) {
   const element = document.querySelector<HTMLElement>(selector);
@@ -100,6 +115,26 @@ function renderCandidate(candidate: SongCandidate) {
   renderList("[data-candidate-uncertain]", candidate.uncertain_fields, "没有标记字段");
   setText("[data-candidate-json]", JSON.stringify(candidate, null, 2));
   if (candidatePanel) candidatePanel.hidden = false;
+}
+
+function renderEditDiff() {
+  if (!isEditMode || !originalCandidate || !draftCandidate) return;
+  const summary = summarizeSongChanges(originalCandidate.song, draftCandidate.song);
+  const lines: string[] = [];
+  if (summary.changedBlockIds.length) lines.push(`修改段落：${summary.changedBlockIds.join("、")}`);
+  if (summary.repeatConversions) lines.push(`转换为 RepeatBlock：${summary.repeatConversions} 段`);
+  if (summary.repeatExpansions) lines.push(`展开 RepeatBlock：${summary.repeatExpansions} 段`);
+  if (summary.changedChords) lines.push(`和弦内容变化：${summary.changedChords} 处`);
+  if (summary.movedChordPositions) lines.push(`和弦标注位置变化：${summary.movedChordPositions} 组`);
+  if (summary.addedLyricPhrases) lines.push(`新增歌词分句：${summary.addedLyricPhrases}`);
+  if (summary.removedLyricPhrases) lines.push(`删除歌词分句：${summary.removedLyricPhrases}`);
+  if (summary.blockOrderChanged) lines.push("段落顺序已变化");
+  if (summary.instrumentProgressionChanges) {
+    lines.push(`Instrument progression 变化：${summary.instrumentProgressionChanges} 段`);
+  }
+  editDirty = lines.length > 0;
+  if (editDiffEmpty) editDiffEmpty.hidden = editDirty;
+  editDiff?.replaceChildren(...lines.map((line) => node("li", undefined, line)));
 }
 
 function node<K extends keyof HTMLElementTagNameMap>(
@@ -223,6 +258,24 @@ function renderBlockEditor(song: EditableSong) {
           phrase.append(fieldLabel(variant ? `歌词 ${variant}` : rows.length > 1 ? `歌词组 ${lyricSetIndex + 1}` : "歌词", lyricInput));
         });
         const phraseActions = node("div", "phrase-editor-actions");
+        const moveLeft = actionButton("和弦前移", "move-chord-left", blockIndex);
+        moveLeft.dataset.phraseIndex = String(phraseIndex);
+        moveLeft.disabled = phraseIndex === 0;
+        const moveRight = actionButton("和弦后移", "move-chord-right", blockIndex);
+        moveRight.dataset.phraseIndex = String(phraseIndex);
+        moveRight.disabled = phraseIndex === block.chords.length - 1;
+        const splitPhrase = actionButton("在歌词光标处插入变化点", "split-phrase-at-cursor", blockIndex);
+        splitPhrase.dataset.phraseIndex = String(phraseIndex);
+        splitPhrase.setAttribute("aria-label", `在分句 ${phraseIndex + 1} 的歌词光标处插入和弦变化点`);
+        phraseActions.append(moveLeft, moveRight, splitPhrase);
+        if (phraseIndex < block.chords.length - 1) {
+          const mergePhrase = actionButton("删除下一变化点", "merge-phrase-next", blockIndex);
+          mergePhrase.dataset.phraseIndex = String(phraseIndex);
+          const compatible = block.chords[phraseIndex] === block.chords[phraseIndex + 1];
+          mergePhrase.disabled = !compatible;
+          if (!compatible) mergePhrase.title = "相邻分句包含不同和弦，无法无损合并";
+          phraseActions.append(mergePhrase);
+        }
         if (phraseIndex > 0) {
           const split = actionButton("从此处分段", "split-block", blockIndex);
           split.dataset.phraseIndex = String(phraseIndex);
@@ -314,6 +367,7 @@ function applySongEdit(song: EditableSong, rerenderEditor = true) {
   renderCandidate(draftCandidate);
   if (rerenderEditor) renderBlockEditor(song);
   renderPreview(song);
+  renderEditDiff();
   updatePublishState();
 }
 
@@ -340,6 +394,7 @@ function updatePublishState() {
       Boolean(currentDuplicate) ||
       !confirmation?.checked ||
       !githubConfigured ||
+      (isEditMode && (!expectedSha || !editDirty)) ||
       publishGuard.locked;
   }
 }
@@ -553,7 +608,28 @@ blockEditor?.addEventListener("click", (event) => {
         '[data-editor-field="repeat-target-draft"]'
       );
       if (!selector) throw new Error("invalid_repeat_ref");
-      song = markBlockAsRepeat(song, blockIndex, selector.value);
+      try {
+        song = markBlockAsRepeat(song, blockIndex, selector.value);
+      } catch (error) {
+        if (!(error instanceof Error) || error.message !== "repeat_content_mismatch") throw error;
+        const replace = window.confirm(
+          "当前段落与重复来源内容不同。转换会以来源段落覆盖当前内容；是否确认继续？"
+        );
+        if (!replace) throw new Error("内容不同，已保留为独立段落");
+        song = markBlockAsRepeat(song, blockIndex, selector.value, true);
+      }
+    } else if (action === "split-phrase-at-cursor") {
+      const row = target.closest(".phrase-editor-row");
+      const lyric = row?.querySelector<HTMLInputElement>('[data-editor-field="phrase-lyric"]');
+      const position = lyric?.selectionStart;
+      if (position === null || position === undefined) throw new Error("请先把光标放在歌词拆分位置");
+      song = splitLyricPhraseAt(song, blockIndex, phraseIndex, position);
+    } else if (action === "merge-phrase-next") {
+      song = mergeLyricPhrases(song, blockIndex, phraseIndex);
+    } else if (action === "move-chord-left") {
+      song = moveLyricChord(song, blockIndex, phraseIndex, -1);
+    } else if (action === "move-chord-right") {
+      song = moveLyricChord(song, blockIndex, phraseIndex, 1);
     } else return;
     applySongEdit(song);
   } catch (error) {
@@ -592,6 +668,20 @@ document.querySelectorAll<HTMLButtonElement>("[data-preview-width]").forEach((co
 
 confirmation?.addEventListener("change", updatePublishState);
 
+document.querySelectorAll<HTMLButtonElement>("[data-editor-global-action]").forEach((control) => {
+  control.addEventListener("click", () => {
+    if (!draftCandidate || publishGuard.locked) return;
+    const action = control.dataset.editorGlobalAction;
+    const lastPlayableIndex = Math.max(0, draftCandidate.song.blocks.findLastIndex(
+      (block) => block.type !== "theory_legend"
+    ));
+    const song = action === "add-lyric-block"
+      ? addLyricBlock(draftCandidate.song, lastPlayableIndex)
+      : addInstrumentBlock(draftCandidate.song, lastPlayableIndex);
+    applySongEdit(song);
+  });
+});
+
 publishButton?.addEventListener("click", async () => {
   if (!currentCandidate || currentDuplicate || !confirmation?.checked || !githubConfigured) return;
   if (!publishGuard.begin()) return;
@@ -603,11 +693,13 @@ publishButton?.addEventListener("click", async () => {
   }
 
   try {
-    const response = await fetch("/api/songs/publish", {
+    const response = await fetch(isEditMode ? "/api/songs/update" : "/api/songs/publish", {
       method: "POST",
       credentials: "same-origin",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ candidate: currentCandidate, confirmed: true })
+      body: JSON.stringify(isEditMode
+        ? { candidate: currentCandidate, song_id: editSlug, expected_sha: expectedSha, confirmed: true }
+        : { candidate: currentCandidate, confirmed: true })
     });
     const payload = await response.json() as {
       commit_url?: unknown;
@@ -618,16 +710,18 @@ publishButton?.addEventListener("click", async () => {
       throw new Error("GitHub 返回结果无效。\n错误码：github_upstream_error");
     }
     publishGuard.succeed();
-    publishButton.textContent = "已提交";
+    publishButton.textContent = isEditMode ? "更新已提交" : "已提交";
     if (publishCommit) publishCommit.href = payload.commit_url;
     if (publishResult) publishResult.hidden = false;
     if (status) {
       status.className = "add-status is-success";
-      status.textContent = "歌曲已提交，正在等待自动部署。";
+      status.textContent = isEditMode
+        ? "曲谱更新已提交，正在等待自动部署。"
+        : "歌曲已提交，正在等待自动部署。";
     }
   } catch (error) {
     publishGuard.fail();
-    publishButton.textContent = "加入曲库";
+    publishButton.textContent = isEditMode ? "更新现有歌曲" : "加入曲库";
     if (status) {
       status.className = "add-status is-error";
       status.textContent = error instanceof Error ? error.message : "提交失败，请稍后再试。";
@@ -638,3 +732,47 @@ publishButton?.addEventListener("click", async () => {
 });
 
 void refreshGitHubConfiguration();
+
+async function initializePublishedEdit() {
+  if (!isEditMode || !editSlug || !status) return;
+  try {
+    const response = await fetch(`/api/songs/${encodeURIComponent(editSlug)}/edit`, {
+      credentials: "same-origin"
+    });
+    const payload = await readApiJson(response) as { candidate?: unknown; expected_sha?: unknown };
+    if (!response.ok) throw new Error(errorMessage(response.status, payload));
+    const candidate = SongCandidateSchema.safeParse(payload.candidate);
+    if (!candidate.success || typeof payload.expected_sha !== "string" ||
+      !/^[a-f0-9]{7,64}$/i.test(payload.expected_sha)) {
+      throw new Error("当前歌曲版本无效。\n错误码：invalid_candidate");
+    }
+    expectedSha = payload.expected_sha;
+    originalCandidate = structuredClone(candidate.data);
+    draftCandidate = candidate.data;
+    currentCandidate = candidate.data;
+    renderCandidate(candidate.data);
+    currentSongIndex = (await loadSongIndex()).filter((entry) => entry.slug !== editSlug);
+    showDuplicate(findDuplicateSong(currentSongIndex, candidate.data.song));
+    renderBlockEditor(candidate.data.song);
+    renderPreview(candidate.data.song);
+    renderEditorValidation([]);
+    renderEditDiff();
+    status.className = "add-status is-success";
+    status.textContent = "已载入当前 GitHub 文件版本。修改后请检查差异并重新确认。";
+  } catch (error) {
+    status.className = "add-status is-error";
+    status.textContent = error instanceof Error ? error.message : "无法载入当前歌曲版本。";
+  }
+}
+
+cancelEdit?.addEventListener("click", (event) => {
+  if (editDirty && !window.confirm("存在未保存修改，确定取消编辑吗？")) event.preventDefault();
+});
+
+window.addEventListener("beforeunload", (event) => {
+  if (!editDirty || publishGuard.locked) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
+
+void initializePublishedEdit();

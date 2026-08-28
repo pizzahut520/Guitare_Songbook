@@ -37,6 +37,11 @@ export interface GitHubRepositoryStatus {
   push_permission: boolean;
 }
 
+export interface GitHubSongRevision {
+  song: unknown;
+  sha: string;
+}
+
 interface GitHubProviderOptions { fetch?: typeof fetch }
 
 function base64Utf8(value: string): string {
@@ -46,6 +51,11 @@ function base64Utf8(value: string): string {
     binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
   }
   return btoa(binary);
+}
+
+function decodeBase64Utf8(value: string): string {
+  const binary = atob(value.replace(/\s+/g, ""));
+  return new TextDecoder().decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
 }
 
 async function standardErrorMessage(response: Response): Promise<string | undefined> {
@@ -113,6 +123,52 @@ export class GitHubContentsProvider {
       "X-GitHub-Api-Version": "2026-03-10",
       "User-Agent": "Guitare-Songbook-Worker/1.0"
     };
+  }
+
+  private contentUrl(slug: string): { apiUrl: string; songPath: string } {
+    const [owner, repositoryName] = this.repository.split("/");
+    if (
+      !owner || !repositoryName || this.repository.split("/").length !== 2 ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)
+    ) {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    const songPath = `src/content/songs/${slug}.json`;
+    return {
+      songPath,
+      apiUrl: `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repositoryName)}/contents/${songPath}`
+    };
+  }
+
+  async getSongRevision(slug: string): Promise<GitHubSongRevision> {
+    const { apiUrl } = this.contentUrl(slug);
+    let response: Response;
+    try {
+      response = await this.fetchImplementation(`${apiUrl}?ref=${encodeURIComponent(this.branch)}`, {
+        method: "GET",
+        headers: this.standardHeaders()
+      });
+    } catch {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    if (!response.ok) throw await mappedError(response);
+    let payload: { sha?: unknown; content?: unknown; encoding?: unknown };
+    try {
+      payload = await response.json() as typeof payload;
+    } catch {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    if (
+      typeof payload.sha !== "string" || !/^[a-f0-9]{7,64}$/i.test(payload.sha) ||
+      payload.encoding !== "base64" || typeof payload.content !== "string"
+    ) {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    try {
+      return { sha: payload.sha, song: JSON.parse(decodeBase64Utf8(payload.content)) };
+    } catch {
+      throw new GitHubProviderError("github_upstream_error");
+    }
   }
 
   async checkRepositoryStatus(): Promise<GitHubRepositoryStatus> {
@@ -203,6 +259,50 @@ export class GitHubContentsProvider {
       !/^[a-f0-9]{7,64}$/i.test(commit.sha) ||
       typeof commit.html_url !== "string" ||
       !commit.html_url.startsWith("https://github.com/")
+    ) {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    return {
+      commit_sha: commit.sha,
+      commit_url: commit.html_url,
+      song_path: songPath,
+      deployment_pending: true
+    };
+  }
+
+  async updateSong(song: Song, expectedSha: string): Promise<GitHubPublishResult> {
+    if (!/^[a-f0-9]{7,64}$/i.test(expectedSha)) {
+      throw new GitHubProviderError("github_conflict");
+    }
+    const { apiUrl, songPath } = this.contentUrl(song.slug);
+    let updated: Response;
+    try {
+      updated = await this.fetchImplementation(apiUrl, {
+        method: "PUT",
+        headers: { ...this.standardHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `feat(songbook): update ${song.artist} - ${song.title}`,
+          content: base64Utf8(`${JSON.stringify(song, null, 2)}\n`),
+          branch: this.branch,
+          sha: expectedSha
+        })
+      });
+    } catch {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    if (updated.status !== 200) throw await mappedError(updated);
+    let payload: unknown;
+    try {
+      payload = await updated.json();
+    } catch {
+      throw new GitHubProviderError("github_upstream_error");
+    }
+    const commit = payload && typeof payload === "object" && "commit" in payload
+      ? (payload as { commit?: { sha?: unknown; html_url?: unknown } }).commit
+      : undefined;
+    if (
+      typeof commit?.sha !== "string" || !/^[a-f0-9]{7,64}$/i.test(commit.sha) ||
+      typeof commit.html_url !== "string" || !commit.html_url.startsWith("https://github.com/")
     ) {
       throw new GitHubProviderError("github_upstream_error");
     }

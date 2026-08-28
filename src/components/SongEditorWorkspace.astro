@@ -1,0 +1,51 @@
+<div class="candidate-workspace">
+  <section class="structure-editor" aria-labelledby="structure-editor-title">
+    <div class="workspace-heading">
+      <div>
+        <p class="eyebrow">LOCAL EDITOR</p>
+        <h3 id="structure-editor-title">曲式结构</h3>
+      </div>
+      <span>修改只保存在当前页面内存中</span>
+    </div>
+    <div class="editor-errors" data-editor-errors hidden role="alert" aria-live="polite">
+      <strong>当前曲谱暂时不能保存</strong>
+      <ul data-editor-error-list></ul>
+    </div>
+    <div class="block-editor" data-block-editor></div>
+    <div class="block-editor-add" aria-label="添加段落">
+      <button class="editor-button" type="button" data-editor-global-action="add-lyric-block">＋ 歌词段</button>
+      <button class="editor-button" type="button" data-editor-global-action="add-instrument-block">＋ 器乐段</button>
+    </div>
+  </section>
+
+  <section class="preview-panel" aria-labelledby="preview-title">
+    <div class="workspace-heading">
+      <div>
+        <p class="eyebrow">PRODUCTION PREVIEW</p>
+        <h3 id="preview-title">正式谱面预览</h3>
+      </div>
+    </div>
+    <div class="preview-toolbar" aria-label="预览设置">
+      <label>
+        <span>显示</span>
+        <select data-preview-mode aria-label="级数或实际和弦">
+          <option value="degree">级数</option>
+          <option value="chord">实际和弦</option>
+        </select>
+      </label>
+      <div class="preview-stepper" aria-label="预览移调">
+        <button type="button" data-preview-transpose-down aria-label="预览降半音">−</button>
+        <span data-preview-transpose>移调 0</span>
+        <button type="button" data-preview-transpose-up aria-label="预览升半音">＋</button>
+      </div>
+      <div class="preview-widths" aria-label="预览宽度">
+        <button type="button" data-preview-width="phone" aria-pressed="false">手机</button>
+        <button type="button" data-preview-width="tablet" aria-pressed="false">平板</button>
+        <button type="button" data-preview-width="desktop" aria-pressed="true">桌面 / A4</button>
+      </div>
+    </div>
+    <div class="preview-viewport is-desktop" data-preview-viewport>
+      <div data-song-preview></div>
+    </div>
+  </section>
+</div>

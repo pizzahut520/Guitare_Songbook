@@ -840,6 +840,38 @@ button {
   overflow-wrap: anywhere;
 }
 
+.block-editor-add,
+.edit-submit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.block-editor-add .editor-button,
+.edit-submit-actions .editor-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-song-page { max-width: 100rem; }
+.edit-candidate-panel { display: block; }
+
+.edit-diff {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface) 54%, transparent);
+}
+
+.edit-diff h3 { margin: 0 0 0.6rem; }
+.edit-diff p { margin: 0; color: var(--muted); }
+.edit-diff ul { margin: 0; padding-left: 1.25rem; }
+.edit-diff li + li { margin-top: 0.3rem; }
+
 .library-hero {
   min-height: 25rem;
   padding: clamp(4rem, 9vw, 7rem) clamp(2rem, 7vw, 7.5rem);
@@ -1198,6 +1230,14 @@ button {
 .song-stage {
   padding: clamp(1rem, 3vw, 2.75rem);
   background: color-mix(in srgb, var(--surface) 92%, var(--paper));
+}
+
+.edit-song-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.7rem;
+  white-space: nowrap;
 }
 
 .song-sheet {

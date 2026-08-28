@@ -9,6 +9,10 @@ function response(status: number, body: unknown = {}) {
 
 describe("GitHub Contents provider with mocked fetch", () => {
   const song = SongSchema.parse(fictitiousSongCandidate.song);
+  const encodeSong = (value: unknown) => {
+    const bytes = new TextEncoder().encode(JSON.stringify(value));
+    return btoa(String.fromCharCode(...bytes));
+  };
   it("creates only the fixed song path without a sha overwrite field", async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
       fetchMock.mock.calls.length === 1
@@ -119,7 +123,7 @@ describe("GitHub Contents provider with mocked fetch", () => {
   });
 
   it("checks repository status with one read-only GET and exposes only push permission", async () => {
-    const fetchMock = vi.fn(async () => Response.json({
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => Response.json({
       permissions: { push: true, admin: false },
       private: true,
       sensitive_field: "must not escape"
@@ -145,5 +149,69 @@ describe("GitHub Contents provider with mocked fetch", () => {
     });
     expect(JSON.stringify(result)).not.toContain("test-token");
     expect(JSON.stringify(result)).not.toContain("must not escape");
+  });
+
+  it("loads an existing song revision with one authenticated GET", async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => Response.json({
+      sha: "abcdef1234567",
+      encoding: "base64",
+      content: encodeSong(song)
+    }));
+    const provider = new GitHubContentsProvider("  update-test-token  ", "owner/repo", "main", {
+      fetch: fetchMock
+    });
+
+    const revision = await provider.getSongRevision(song.slug);
+
+    expect(revision).toEqual({ sha: "abcdef1234567", song });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({
+      method: "GET",
+      headers: expect.objectContaining({
+        Authorization: "Bearer update-test-token",
+        "User-Agent": "Guitare-Songbook-Worker/1.0"
+      })
+    });
+    expect(JSON.stringify(revision)).not.toContain("update-test-token");
+  });
+
+  it("updates only the trusted slug path with the expected SHA", async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => response(200, {
+      commit: {
+        sha: "fedcba7654321",
+        html_url: "https://github.com/owner/repo/commit/fedcba7654321"
+      }
+    }));
+    const provider = new GitHubContentsProvider("update-token", "owner/repo", "main", {
+      fetch: fetchMock
+    });
+
+    const result = await provider.updateSong(song, "abcdef1234567");
+    const [url, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(String(init?.body));
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(String(url)).toBe(
+      `https://api.github.com/repos/owner/repo/contents/src/content/songs/${song.slug}.json`
+    );
+    expect(init?.method).toBe("PUT");
+    expect(body).toMatchObject({ branch: "main", sha: "abcdef1234567" });
+    expect(JSON.parse(new TextDecoder().decode(
+      Uint8Array.from(atob(body.content), (character) => character.charCodeAt(0))
+    ))).toEqual(song);
+    expect(result.song_path).toBe(`src/content/songs/${song.slug}.json`);
+    expect(JSON.stringify(result)).not.toContain("update-token");
+  });
+
+  it("maps an update SHA conflict without retrying or overwriting", async () => {
+    const fetchMock = vi.fn(async () => response(409));
+    const provider = new GitHubContentsProvider("test-token", "owner/repo", "main", {
+      fetch: fetchMock
+    });
+
+    await expect(provider.updateSong(song, "abcdef1234567")).rejects.toMatchObject({
+      code: "github_conflict"
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 });

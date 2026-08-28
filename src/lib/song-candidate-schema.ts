@@ -48,6 +48,10 @@ export const SongCandidateOutputSchema = z.object(candidateShape);
 
 export const SongCandidateSchema = z.object({
   ...candidateShape,
+  // Browser-side editing also wraps previously published, non-web-search
+  // songs in the candidate envelope. AI output remains constrained by
+  // SongCandidateOutputSchema above.
+  song: SongSchema,
   usage: CandidateUsageSchema.optional()
 });
 

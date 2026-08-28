@@ -57,6 +57,7 @@ const data = song.data;
           <button class="tool-button" type="button" data-font-increase aria-label="放大字体">A＋</button>
           <button class="tool-button" type="button" data-theme-toggle aria-label="切换颜色主题">◐</button>
           <button class="tool-button" type="button" data-wake-lock aria-pressed="false">常亮</button>
+          <a class="tool-button edit-song-link" href={`/song/${data.slug}/edit/`}>编辑曲谱</a>
           <button class="tool-button desktop-only" type="button" data-print>打印</button>
           <button class="tool-button desktop-only" type="button" data-fullscreen>全屏</button>
         </div>

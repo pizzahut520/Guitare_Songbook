@@ -81,6 +81,77 @@ export function deleteLyricPhrase(source: EditableSong, blockIndex: number, phra
   return song;
 }
 
+export function splitLyricPhraseAt(
+  source: EditableSong,
+  blockIndex: number,
+  phraseIndex: number,
+  characterIndex: number
+): EditableSong {
+  const song = copySong(source);
+  const block = lyricAt(song, blockIndex);
+  if (phraseIndex < 0 || phraseIndex >= block.chords.length) throw new Error("phrase_not_found");
+  const rows = block.lyrics ? [block.lyrics] : block.lyric_sets ?? [];
+  const primary = rows[0]?.[phraseIndex] ?? "";
+  if (!Number.isInteger(characterIndex) || characterIndex <= 0 || characterIndex >= primary.length) {
+    throw new Error("invalid_character_split_point");
+  }
+  block.chords.splice(phraseIndex, 1, block.chords[phraseIndex], block.chords[phraseIndex]);
+  rows.forEach((row) => {
+    const phrase = row[phraseIndex] ?? "";
+    const splitAt = Math.min(characterIndex, phrase.length);
+    row.splice(phraseIndex, 1, phrase.slice(0, splitAt), phrase.slice(splitAt));
+  });
+  if (block.widths) {
+    const width = block.widths[phraseIndex] ?? 1;
+    block.widths.splice(phraseIndex, 1, width / 2, width / 2);
+  }
+  return song;
+}
+
+export function mergeLyricPhrases(
+  source: EditableSong,
+  blockIndex: number,
+  firstPhraseIndex: number
+): EditableSong {
+  const song = copySong(source);
+  const block = lyricAt(song, blockIndex);
+  if (firstPhraseIndex < 0 || firstPhraseIndex + 1 >= block.chords.length) {
+    throw new Error("phrase_not_found");
+  }
+  if (block.chords[firstPhraseIndex] !== block.chords[firstPhraseIndex + 1]) {
+    throw new Error("different_chords_cannot_merge_losslessly");
+  }
+  const rows = block.lyrics ? [block.lyrics] : block.lyric_sets ?? [];
+  rows.forEach((row) => {
+    row.splice(firstPhraseIndex, 2, `${row[firstPhraseIndex] ?? ""}${row[firstPhraseIndex + 1] ?? ""}`);
+  });
+  block.chords.splice(firstPhraseIndex + 1, 1);
+  if (block.widths) {
+    block.widths.splice(
+      firstPhraseIndex,
+      2,
+      (block.widths[firstPhraseIndex] ?? 1) + (block.widths[firstPhraseIndex + 1] ?? 1)
+    );
+  }
+  return song;
+}
+
+export function moveLyricChord(
+  source: EditableSong,
+  blockIndex: number,
+  phraseIndex: number,
+  direction: -1 | 1
+): EditableSong {
+  const song = copySong(source);
+  const block = lyricAt(song, blockIndex);
+  const target = phraseIndex + direction;
+  if (phraseIndex < 0 || phraseIndex >= block.chords.length || target < 0 || target >= block.chords.length) {
+    throw new Error("chord_move_out_of_range");
+  }
+  [block.chords[phraseIndex], block.chords[target]] = [block.chords[target], block.chords[phraseIndex]];
+  return song;
+}
+
 function slicedLyric(block: LyricBlock, start: number, end?: number): LyricBlock {
   return {
     ...structuredClone(block),
@@ -150,7 +221,29 @@ export function deleteBlock(source: EditableSong, blockIndex: number): EditableS
   return song;
 }
 
-export function markBlockAsRepeat(source: EditableSong, blockIndex: number, ref: string): EditableSong {
+function repeatContent(block: Extract<SongBlock, { type: "lyric" | "instrument" }>): unknown {
+  const copy = structuredClone(block) as Record<string, unknown>;
+  delete copy.id;
+  delete copy.section_label;
+  if (block.type === "lyric") delete copy.section_role;
+  else delete copy.label;
+  return copy;
+}
+
+export function blocksHaveEqualRepeatContent(
+  current: Extract<SongBlock, { type: "lyric" | "instrument" }>,
+  target: Extract<SongBlock, { type: "lyric" | "instrument" }>
+): boolean {
+  return current.type === target.type &&
+    JSON.stringify(repeatContent(current)) === JSON.stringify(repeatContent(target));
+}
+
+export function markBlockAsRepeat(
+  source: EditableSong,
+  blockIndex: number,
+  ref: string,
+  allowContentReplacement = false
+): EditableSong {
   const song = copySong(source);
   const current = song.blocks[blockIndex];
   const targetIndex = song.blocks.findIndex((block) => block.id === ref);
@@ -158,6 +251,12 @@ export function markBlockAsRepeat(source: EditableSong, blockIndex: number, ref:
   if (!current || targetIndex < 0 || targetIndex >= blockIndex ||
     !target || (target.type !== "lyric" && target.type !== "instrument")) {
     throw new Error("invalid_repeat_ref");
+  }
+  if (
+    (current.type !== "lyric" && current.type !== "instrument") ||
+    !blocksHaveEqualRepeatContent(current, target)
+  ) {
+    if (!allowContentReplacement) throw new Error("repeat_content_mismatch");
   }
   song.blocks[blockIndex] = {
     id: current.id,
@@ -168,6 +267,33 @@ export function markBlockAsRepeat(source: EditableSong, blockIndex: number, ref:
       ? { section_label: current.section_label }
       : {})
   };
+  return song;
+}
+
+export function addLyricBlock(source: EditableSong, afterIndex = source.blocks.length - 1): EditableSong {
+  const song = copySong(source);
+  const id = uniqueBlockId(song.blocks, "verse-new");
+  song.blocks.splice(Math.max(0, Math.min(song.blocks.length, afterIndex + 1)), 0, {
+    id,
+    type: "lyric",
+    chords: ["1"],
+    lyrics: [""],
+    section_role: "verse",
+    section_label: "新段落",
+    spacing: "normal"
+  });
+  return song;
+}
+
+export function addInstrumentBlock(source: EditableSong, afterIndex = source.blocks.length - 1): EditableSong {
+  const song = copySong(source);
+  const id = uniqueBlockId(song.blocks, "instrument-new");
+  song.blocks.splice(Math.max(0, Math.min(song.blocks.length, afterIndex + 1)), 0, {
+    id,
+    type: "instrument",
+    label: "新器乐段",
+    progression: "| 1 |"
+  });
   return song;
 }
 
@@ -226,5 +352,76 @@ export function applyCandidateSongEdit(
     candidate,
     confirmed: false,
     duplicate: findDuplicateSong(index, song)
+  };
+}
+
+export interface SongChangeSummary {
+  changedBlockIds: string[];
+  repeatConversions: number;
+  repeatExpansions: number;
+  changedChords: number;
+  movedChordPositions: number;
+  addedLyricPhrases: number;
+  removedLyricPhrases: number;
+  blockOrderChanged: boolean;
+  instrumentProgressionChanges: number;
+}
+
+export function summarizeSongChanges(original: EditableSong, edited: EditableSong): SongChangeSummary {
+  const before = new Map(original.blocks.map((block) => [block.id, block]));
+  const after = new Map(edited.blocks.map((block) => [block.id, block]));
+  const changedBlockIds = new Set<string>();
+  let repeatConversions = 0;
+  let repeatExpansions = 0;
+  let changedChords = 0;
+  let movedChordPositions = 0;
+  let addedLyricPhrases = 0;
+  let removedLyricPhrases = 0;
+  let instrumentProgressionChanges = 0;
+
+  for (const [id, block] of before) {
+    const next = after.get(id);
+    if (!next) {
+      changedBlockIds.add(id);
+      if (block.type === "repeat") repeatExpansions += 1;
+      if (block.type === "lyric") removedLyricPhrases += block.chords.length;
+      continue;
+    }
+    if (JSON.stringify(block) !== JSON.stringify(next)) changedBlockIds.add(id);
+    if (block.type !== "repeat" && next.type === "repeat") repeatConversions += 1;
+    if (block.type === "instrument" && next.type === "instrument" && block.progression !== next.progression) {
+      instrumentProgressionChanges += 1;
+    }
+    if (block.type === "lyric" && next.type === "lyric") {
+      const overlap = Math.min(block.chords.length, next.chords.length);
+      for (let index = 0; index < overlap; index += 1) {
+        if (block.chords[index] !== next.chords[index]) changedChords += 1;
+      }
+      const beforeSorted = [...block.chords].sort().join("\u0000");
+      const afterSorted = [...next.chords].sort().join("\u0000");
+      if (beforeSorted === afterSorted && block.chords.join("\u0000") !== next.chords.join("\u0000")) {
+        movedChordPositions += 1;
+      }
+      addedLyricPhrases += Math.max(0, next.chords.length - block.chords.length);
+      removedLyricPhrases += Math.max(0, block.chords.length - next.chords.length);
+    }
+  }
+  for (const [id, block] of after) {
+    if (before.has(id)) continue;
+    changedBlockIds.add(id);
+    if (block.type === "lyric") addedLyricPhrases += block.chords.length;
+  }
+  const sharedBeforeOrder = original.blocks.map((block) => block.id).filter((id) => after.has(id));
+  const sharedAfterOrder = edited.blocks.map((block) => block.id).filter((id) => before.has(id));
+  return {
+    changedBlockIds: [...changedBlockIds],
+    repeatConversions,
+    repeatExpansions,
+    changedChords,
+    movedChordPositions,
+    addedLyricPhrases,
+    removedLyricPhrases,
+    blockOrderChanged: sharedBeforeOrder.join("\u0000") !== sharedAfterOrder.join("\u0000"),
+    instrumentProgressionChanges
   };
 }
