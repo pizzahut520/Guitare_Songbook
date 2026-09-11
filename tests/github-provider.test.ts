@@ -175,6 +175,55 @@ describe("GitHub Contents provider with mocked fetch", () => {
     expect(JSON.stringify(revision)).not.toContain("update-test-token");
   });
 
+  it("calls every GitHub request through a receiver-safe fetch wrapper", async () => {
+    const commit = {
+      sha: "fedcba7654321",
+      html_url: "https://github.com/owner/repo/commit/fedcba7654321"
+    };
+    const receiverSensitiveFetch = vi.fn(async function (
+      this: unknown,
+      _input: RequestInfo | URL,
+      _init?: RequestInit
+    ) {
+      if (this !== undefined) throw new TypeError("Illegal invocation: private detail");
+      switch (receiverSensitiveFetch.mock.calls.length) {
+        case 1:
+          return response(200, { sha: "abcdef1234567", encoding: "base64", content: encodeSong(song) });
+        case 2:
+          return response(200, { permissions: { push: true } });
+        case 3:
+          return response(404);
+        case 4:
+          return response(201, { commit });
+        case 5:
+          return response(200, { commit });
+        default:
+          throw new Error("unexpected mocked GitHub request");
+      }
+    });
+    const provider = new GitHubContentsProvider(" receiver-safe-token ", "owner/repo", "main", {
+      fetch: receiverSensitiveFetch as typeof fetch
+    });
+
+    await expect(provider.getSongRevision(song.slug)).resolves.toEqual({ sha: "abcdef1234567", song });
+    await expect(provider.checkRepositoryStatus()).resolves.toMatchObject({ push_permission: true });
+    await expect(provider.createSong(song)).resolves.toMatchObject({ commit_sha: commit.sha });
+    await expect(provider.updateSong(song, "abcdef1234567")).resolves.toMatchObject({ commit_sha: commit.sha });
+
+    expect(receiverSensitiveFetch).toHaveBeenCalledTimes(5);
+    for (const [, init] of receiverSensitiveFetch.mock.calls) {
+      expect(init?.headers).toMatchObject({
+        "Accept": "application/vnd.github+json",
+        "Authorization": "Bearer receiver-safe-token",
+        "X-GitHub-Api-Version": "2026-03-10",
+        "User-Agent": "Guitare-Songbook-Worker/1.0"
+      });
+    }
+    const updateBody = JSON.parse(String(receiverSensitiveFetch.mock.calls[4][1]?.body));
+    expect(updateBody).toMatchObject({ branch: "main", sha: "abcdef1234567" });
+    expect(JSON.stringify(receiverSensitiveFetch.mock.calls)).not.toContain("Illegal invocation: private detail");
+  });
+
   it.each([
     ["malformed JSON", () => new Response("{", { status: 200, headers: { "content-type": "application/json", "x-github-request-id": "request-1" } }), "invalid_response_json"],
     ["non-object JSON", () => response(200, null), "invalid_response_json"],
