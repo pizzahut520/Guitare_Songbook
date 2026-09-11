@@ -38,6 +38,190 @@ export function uniqueBlockId(blocks: EditableSongBlock[], preferred: string): s
   return `${stem}-${suffix}`;
 }
 
+export interface LyricVariantCompatibility {
+  compatible: boolean;
+  reason?: "phrase_count_mismatch" | "chord_token_mismatch";
+  phraseIndex?: number;
+  leftChord?: string;
+  rightChord?: string;
+}
+
+function ordinaryLyricAt(song: EditableSong, blockIndex: number): LyricBlock {
+  const block = lyricAt(song, blockIndex);
+  if (!block.lyrics || block.lyric_sets) throw new Error("ordinary_lyric_block_required");
+  return block;
+}
+
+function variantLyricAt(song: EditableSong, blockIndex: number): LyricBlock {
+  const block = lyricAt(song, blockIndex);
+  if (!block.lyric_sets || block.lyrics) throw new Error("lyric_variants_required");
+  return block;
+}
+
+function chordTokens(chord: string): string[] {
+  return chord.trim().split(/\s+/).filter(Boolean);
+}
+
+/** Compare display tokens only; callers always retain the left block's original spacing. */
+export function compareLyricChordCompatibility(
+  left: EditableLyricBlock,
+  right: EditableLyricBlock
+): LyricVariantCompatibility {
+  if (left.chords.length !== right.chords.length) {
+    return { compatible: false, reason: "phrase_count_mismatch" };
+  }
+  for (let phraseIndex = 0; phraseIndex < left.chords.length; phraseIndex += 1) {
+    const leftTokens = chordTokens(left.chords[phraseIndex]);
+    const rightTokens = chordTokens(right.chords[phraseIndex]);
+    if (leftTokens.length !== rightTokens.length || leftTokens.some((token, index) => token !== rightTokens[index])) {
+      return {
+        compatible: false,
+        reason: "chord_token_mismatch",
+        phraseIndex,
+        leftChord: left.chords[phraseIndex],
+        rightChord: right.chords[phraseIndex]
+      };
+    }
+  }
+  return { compatible: true };
+}
+
+function defaultVariantLabels(count: number): string[] {
+  return Array.from({ length: count }, (_, index) => {
+    if (index === 0) return "A.";
+    if (index === 1) return "B.";
+    return `歌词 ${index + 1}`;
+  });
+}
+
+export function convertLyricsToVariants(source: EditableSong, blockIndex: number): EditableSong {
+  const song = copySong(source);
+  const block = ordinaryLyricAt(song, blockIndex);
+  const lyrics = [...block.lyrics!];
+  delete block.lyrics;
+  block.lyric_sets = [lyrics, lyrics.map(() => "")];
+  block.variant_labels = ["A.", "B."];
+  return song;
+}
+
+export function updateLyricVariantLabel(
+  source: EditableSong,
+  blockIndex: number,
+  lyricSetIndex: number,
+  value: string
+): EditableSong {
+  const song = copySong(source);
+  const block = variantLyricAt(song, blockIndex);
+  if (lyricSetIndex < 0 || lyricSetIndex >= block.lyric_sets!.length) throw new Error("lyric_set_not_found");
+  const labels = [...(block.variant_labels ?? defaultVariantLabels(block.lyric_sets!.length))];
+  labels[lyricSetIndex] = value;
+  block.variant_labels = labels;
+  return song;
+}
+
+export function swapLyricVariants(source: EditableSong, blockIndex: number): EditableSong {
+  const song = copySong(source);
+  const block = variantLyricAt(song, blockIndex);
+  if (block.lyric_sets!.length < 2) throw new Error("second_lyric_variant_required");
+  [block.lyric_sets![0], block.lyric_sets![1]] = [block.lyric_sets![1], block.lyric_sets![0]];
+  const labels = [...(block.variant_labels ?? defaultVariantLabels(block.lyric_sets!.length))];
+  [labels[0], labels[1]] = [labels[1], labels[0]];
+  block.variant_labels = labels;
+  return song;
+}
+
+/** Remove a variant. Removing B from exactly A/B restores the ordinary lyrics shape. */
+export function removeLyricVariant(
+  source: EditableSong,
+  blockIndex: number,
+  lyricSetIndex = 1
+): EditableSong {
+  const song = copySong(source);
+  const block = variantLyricAt(song, blockIndex);
+  const sets = block.lyric_sets!;
+  if (lyricSetIndex < 0 || lyricSetIndex >= sets.length || sets.length < 2) {
+    throw new Error("lyric_set_not_found");
+  }
+  if (sets.length === 2 && lyricSetIndex === 1) {
+    block.lyrics = [...sets[0]];
+    delete block.lyric_sets;
+    delete block.variant_labels;
+    return song;
+  }
+  sets.splice(lyricSetIndex, 1);
+  const labels = [...(block.variant_labels ?? defaultVariantLabels(sets.length + 1))];
+  labels.splice(lyricSetIndex, 1);
+  block.variant_labels = labels;
+  return song;
+}
+
+/** Turn every lyric set into an ordinary lyric block, retaining every line and generating unique IDs. */
+export function splitVariantsIntoBlocks(source: EditableSong, blockIndex: number): EditableSong {
+  const song = copySong(source);
+  const block = variantLyricAt(song, blockIndex);
+  const sets = block.lyric_sets!;
+  const replacements = sets.map((set, setIndex) => {
+    const next = structuredClone(block);
+    next.id = setIndex === 0 ? block.id : uniqueBlockId(song.blocks, `${block.id}-variant-${setIndex + 1}`);
+    next.lyrics = [...set];
+    delete next.lyric_sets;
+    delete next.variant_labels;
+    return next;
+  });
+  song.blocks.splice(blockIndex, 1, ...replacements);
+  return song;
+}
+
+export function combineLyricBlocksAsVariants(
+  source: EditableSong,
+  leftIndex: number,
+  rightIndex: number
+): EditableSong {
+  if (leftIndex === rightIndex) throw new Error("lyric_blocks_must_differ");
+  const song = copySong(source);
+  const left = ordinaryLyricAt(song, leftIndex);
+  const right = ordinaryLyricAt(song, rightIndex);
+  const compatibility = compareLyricChordCompatibility(left, right);
+  if (!compatibility.compatible) throw new Error(compatibility.reason);
+  const leftLyrics = [...left.lyrics!];
+  const rightLyrics = [...right.lyrics!];
+  delete left.lyrics;
+  left.lyric_sets = [leftLyrics, rightLyrics];
+  left.variant_labels = ["A.", "B."];
+  song.blocks.splice(rightIndex, 1);
+  return song;
+}
+
+/** Combine non-adjacent A/B pairs in one immutable song edit. */
+export function combineLyricRangesAsVariants(
+  source: EditableSong,
+  leftIndexes: number[],
+  rightIndexes: number[]
+): EditableSong {
+  if (!leftIndexes.length || leftIndexes.length !== rightIndexes.length) throw new Error("lyric_variant_pair_count_mismatch");
+  const selected = [...leftIndexes, ...rightIndexes];
+  if (new Set(selected).size !== selected.length) throw new Error("lyric_variant_pairs_must_be_unique");
+  const pairs = leftIndexes.map((leftIndex, index) => ({ leftIndex, rightIndex: rightIndexes[index] }));
+  for (const { leftIndex, rightIndex } of pairs) {
+    const left = ordinaryLyricAt(source, leftIndex);
+    const right = ordinaryLyricAt(source, rightIndex);
+    const compatibility = compareLyricChordCompatibility(left, right);
+    if (!compatibility.compatible) throw new Error(compatibility.reason);
+  }
+  const song = copySong(source);
+  for (const { leftIndex, rightIndex } of pairs) {
+    const left = ordinaryLyricAt(song, leftIndex);
+    const right = ordinaryLyricAt(song, rightIndex);
+    const leftLyrics = [...left.lyrics!];
+    const rightLyrics = [...right.lyrics!];
+    delete left.lyrics;
+    left.lyric_sets = [leftLyrics, rightLyrics];
+    left.variant_labels = ["A.", "B."];
+  }
+  [...rightIndexes].sort((left, right) => right - left).forEach((index) => song.blocks.splice(index, 1));
+  return song;
+}
+
 export function updateLyricPhrase(
   source: EditableSong,
   blockIndex: number,

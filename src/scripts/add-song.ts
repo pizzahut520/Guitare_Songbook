@@ -15,6 +15,10 @@ import {
   addLyricBlock,
   addInstrumentBlock,
   applyCandidateSongEdit,
+  combineLyricBlocksAsVariants,
+  combineLyricRangesAsVariants,
+  compareLyricChordCompatibility,
+  convertLyricsToVariants,
   deleteBlock,
   deleteLyricPhrase,
   expandRepeatBlock,
@@ -23,11 +27,17 @@ import {
   mergeAdjacentLyricBlocks,
   moveLyricChord,
   moveBlock,
+  removeLyricVariant,
   splitLyricBlock,
   splitLyricPhraseAt,
+  splitVariantsIntoBlocks,
+  swapLyricVariants,
   summarizeSongChanges,
   updateBlock,
+  updateLyricVariantLabel,
   updateLyricPhrase,
+  type EditableLyricBlock,
+  type EditableSongBlock,
   type EditableSong
 } from "../lib/candidate-editor";
 import { renderSongPreview } from "../lib/song-preview";
@@ -75,6 +85,8 @@ let originalCandidate: SongCandidate | undefined;
 let editDirty = false;
 let isManualDraft = false;
 let entryMode: "ai" | "manual" = "ai";
+let variantCombine: { leftIndex: number; rightIndex?: number } | undefined;
+let variantBulk: { phase: "left" | "right"; leftIndexes: number[]; rightIndexes: number[] } | undefined;
 
 function setText(selector: string, value: string | number) {
   const element = document.querySelector<HTMLElement>(selector);
@@ -211,6 +223,24 @@ function priorPlayableBlocks(song: EditableSong, blockIndex: number) {
   );
 }
 
+function isOrdinaryLyric(
+  block: EditableSongBlock | undefined
+): boolean {
+  return Boolean(block && block.type === "lyric" && (block as EditableLyricBlock).lyrics &&
+    !(block as EditableLyricBlock).lyric_sets);
+}
+
+function variantCompatibilityText(
+  left: EditableSongBlock | undefined,
+  right: EditableSongBlock | undefined
+): string {
+  if (!isOrdinaryLyric(left) || !isOrdinaryLyric(right)) return "只能选择普通歌词段。";
+  const result = compareLyricChordCompatibility(left as EditableLyricBlock, right as EditableLyricBlock);
+  if (result.compatible) return "和弦兼容；将保留 A 段的和弦原始空格。";
+  if (result.reason === "phrase_count_mismatch") return "分句数量不一致，无法组成 A/B。";
+  return `第 ${(result.phraseIndex ?? 0) + 1} 句和弦 token 不一致，无法组成 A/B。`;
+}
+
 function renderBlockEditor(song: EditableSong) {
   if (!blockEditor) return;
   const cards = song.blocks.map((block, blockIndex) => {
@@ -255,6 +285,40 @@ function renderBlockEditor(song: EditableSong) {
         ]))
       );
       card.append(meta);
+      if (isOrdinaryLyric(block)) {
+        const variantActions = node("div", "block-editor-footer variant-actions");
+        variantActions.append(
+          actionButton("＋ 添加 B 歌词", "add-variant", blockIndex),
+          actionButton("与其他段落组成 A/B", "start-combine-variants", blockIndex)
+        );
+        if (variantCombine?.leftIndex === blockIndex) {
+          variantActions.append(node("span", "variant-mode-note", "已选为歌词 A；请选择另一普通歌词段作为 B。"));
+        } else if (variantCombine && variantCombine.rightIndex === undefined) {
+          const select = actionButton("选择为 B", "select-combine-variant", blockIndex);
+          select.disabled = variantCombine.leftIndex === blockIndex;
+          variantActions.append(select);
+        }
+        card.append(variantActions);
+      } else if (block.lyric_sets) {
+        const labels = node("div", "variant-labels");
+        block.lyric_sets.forEach((_set, lyricSetIndex) => {
+          const label = textInput(
+            block.variant_labels?.[lyricSetIndex] ?? `歌词 ${lyricSetIndex + 1}`,
+            "variant-label",
+            blockIndex
+          );
+          label.dataset.lyricSetIndex = String(lyricSetIndex);
+          labels.append(fieldLabel(`歌词组 ${lyricSetIndex + 1} 标签`, label));
+        });
+        card.append(labels);
+        const variantActions = node("div", "block-editor-footer variant-actions");
+        const swap = actionButton("交换 A/B", "swap-variants", blockIndex);
+        swap.disabled = block.lyric_sets.length < 2;
+        const remove = actionButton("删除 B，恢复普通歌词", "remove-variant", blockIndex);
+        remove.disabled = block.lyric_sets.length < 2;
+        variantActions.append(swap, remove, actionButton("拆成独立歌词块", "split-variants", blockIndex));
+        card.append(variantActions);
+      }
       const phrases = node("div", "phrase-editor");
       block.chords.forEach((chord, phraseIndex) => {
         const phrase = node("fieldset", "phrase-editor-row");
@@ -271,6 +335,8 @@ function renderBlockEditor(song: EditableSong) {
           const variant = block.variant_labels?.[lyricSetIndex];
           phrase.append(fieldLabel(variant ? `歌词 ${variant}` : rows.length > 1 ? `歌词组 ${lyricSetIndex + 1}` : "歌词", lyricInput));
         });
+        const more = node("details", "phrase-editor-more");
+        more.append(node("summary", undefined, "更多操作"));
         const phraseActions = node("div", "phrase-editor-actions");
         const moveLeft = actionButton("和弦前移", "move-chord-left", blockIndex);
         moveLeft.dataset.phraseIndex = String(phraseIndex);
@@ -299,7 +365,8 @@ function renderBlockEditor(song: EditableSong) {
         remove.dataset.phraseIndex = String(phraseIndex);
         remove.disabled = block.chords.length <= 1;
         phraseActions.append(remove);
-        phrase.append(phraseActions);
+        more.append(phraseActions);
+        phrase.append(more);
         phrases.append(phrase);
       });
       card.append(phrases);
@@ -338,9 +405,83 @@ function renderBlockEditor(song: EditableSong) {
     } else {
       card.append(node("p", "readonly-note", "和弦结构说明在 Phase 2C 中只读。"));
     }
+    if (variantBulk && isOrdinaryLyric(block)) {
+      const selector = node("label", "variant-bulk-select");
+      const checkbox = node("input");
+      checkbox.type = "checkbox";
+      checkbox.dataset.bulkVariantIndex = String(blockIndex);
+      const selected = variantBulk.phase === "left" ? variantBulk.leftIndexes : variantBulk.rightIndexes;
+      checkbox.checked = selected.includes(blockIndex);
+      selector.append(checkbox, node("span", undefined, `选择为 ${variantBulk.phase === "left" ? "A" : "B"}`));
+      heading.append(selector);
+    }
     return card;
   });
-  blockEditor.replaceChildren(...cards);
+  const bulkPanel = variantBulk ? node("section", "variant-bulk-panel") : undefined;
+  if (bulkPanel && variantBulk) {
+    const phaseName = variantBulk.phase === "left" ? "A" : "B";
+    bulkPanel.append(node("strong", undefined, `整理为 A/B：选择歌词 ${phaseName}`));
+    bulkPanel.append(node("p", undefined, "可选择不相邻段落；系统会按选择顺序配对，并保留 A 的和弦空格。"));
+    if (variantBulk.phase === "right" && variantBulk.leftIndexes.length && variantBulk.leftIndexes.length === variantBulk.rightIndexes.length) {
+      const previewList = node("ul", "variant-pair-preview");
+      variantBulk.leftIndexes.forEach((leftIndex, pairIndex) => {
+        const rightIndex = variantBulk!.rightIndexes[pairIndex];
+        const item = node("li", undefined, `${song.blocks[leftIndex]?.id} ↔ ${song.blocks[rightIndex]?.id}：${variantCompatibilityText(song.blocks[leftIndex], song.blocks[rightIndex])}`);
+        previewList.append(item);
+      });
+      bulkPanel.append(previewList);
+    }
+    const bulkActions = node("div", "block-editor-footer");
+    if (variantBulk.phase === "left") {
+      const next = actionButton("继续选择 B", "bulk-next", -1);
+      next.disabled = variantBulk.leftIndexes.length === 0;
+      bulkActions.append(next);
+    } else {
+      const back = actionButton("返回选择 A", "bulk-back", -1);
+      const confirm = actionButton("确认整理为 A/B", "bulk-confirm", -1);
+      const equalCount = variantBulk.leftIndexes.length > 0 && variantBulk.leftIndexes.length === variantBulk.rightIndexes.length;
+      const compatible = equalCount && variantBulk.leftIndexes.every((leftIndex, pairIndex) => {
+        const rightIndex = variantBulk!.rightIndexes[pairIndex];
+        return isOrdinaryLyric(song.blocks[leftIndex]) && isOrdinaryLyric(song.blocks[rightIndex]) &&
+          compareLyricChordCompatibility(song.blocks[leftIndex] as never, song.blocks[rightIndex] as never).compatible;
+      });
+      confirm.disabled = !compatible;
+      bulkActions.append(back, confirm);
+    }
+    bulkActions.append(actionButton("取消整理", "bulk-cancel", -1));
+    bulkPanel.append(bulkActions);
+  }
+  if (variantCombine?.rightIndex !== undefined) {
+    const previewPanel = node("section", "variant-combine-preview");
+    const left = song.blocks[variantCombine.leftIndex];
+    const right = song.blocks[variantCombine.rightIndex];
+    previewPanel.append(node("strong", undefined, "A/B 合并预览"));
+    previewPanel.append(node("p", undefined, `${left?.id}（A） ↔ ${right?.id}（B）：${variantCompatibilityText(left, right)}`));
+    if (isOrdinaryLyric(left) && isOrdinaryLyric(right)) {
+      const leftLyric = left as EditableLyricBlock;
+      const rightLyric = right as EditableLyricBlock;
+      const rows = node("div", "variant-combine-rows");
+      leftLyric.chords.forEach((chord, phraseIndex) => {
+        const row = node("div", "variant-combine-row");
+        row.append(
+          node("code", undefined, chord),
+          node("span", undefined, leftLyric.lyrics?.[phraseIndex] ?? ""),
+          node("span", undefined, rightLyric.lyrics?.[phraseIndex] ?? "")
+        );
+        rows.append(row);
+      });
+      previewPanel.append(rows);
+    }
+    const actions = node("div", "block-editor-footer");
+    const confirm = actionButton("确认组成 A/B", "confirm-combine-variants", variantCombine.leftIndex);
+    confirm.disabled = !isOrdinaryLyric(left) || !isOrdinaryLyric(right) ||
+      !compareLyricChordCompatibility(left as never, right as never).compatible;
+    actions.append(confirm, actionButton("取消", "cancel-combine-variants", variantCombine.leftIndex));
+    previewPanel.append(actions);
+    blockEditor.replaceChildren(...(bulkPanel ? [bulkPanel] : []), previewPanel, ...cards);
+    return;
+  }
+  blockEditor.replaceChildren(...(bulkPanel ? [bulkPanel] : []), ...cards);
 }
 
 function validationPaths(candidate: ManualEditableCandidate): string[] {
@@ -366,6 +507,8 @@ function renderPreview(song: EditableSong) {
 
 function applySongEdit(song: EditableSong, rerenderEditor = true) {
   if (!draftCandidate || publishGuard.locked) return;
+  variantCombine = undefined;
+  variantBulk = undefined;
   const edited = applyCandidateSongEdit(
     { candidate: draftCandidate, confirmed: Boolean(confirmation?.checked), duplicate: currentDuplicate },
     song,
@@ -638,6 +781,8 @@ blockEditor?.addEventListener("input", (event) => {
       song = updateLyricPhrase(song, blockIndex, phraseIndex, "chord", input.value);
     } else if (field === "phrase-lyric") {
       song = updateLyricPhrase(song, blockIndex, phraseIndex, "lyric", input.value, lyricSetIndex);
+    } else if (field === "variant-label") {
+      song = updateLyricVariantLabel(song, blockIndex, lyricSetIndex, input.value);
     } else {
       song = updateBlock(song, blockIndex, (block) => {
         if (field === "section-label" && block.type === "lyric") {
@@ -662,7 +807,17 @@ blockEditor?.addEventListener("input", (event) => {
 });
 
 blockEditor?.addEventListener("change", (event) => {
-  if (!draftCandidate || !(event.target instanceof HTMLSelectElement)) return;
+  if (!draftCandidate) return;
+  if (event.target instanceof HTMLInputElement && event.target.dataset.bulkVariantIndex && variantBulk) {
+    const index = Number(event.target.dataset.bulkVariantIndex);
+    const selected = variantBulk.phase === "left" ? variantBulk.leftIndexes : variantBulk.rightIndexes;
+    const other = variantBulk.phase === "left" ? variantBulk.rightIndexes : variantBulk.leftIndexes;
+    if (event.target.checked && !other.includes(index) && !selected.includes(index)) selected.push(index);
+    if (!event.target.checked) selected.splice(selected.indexOf(index), 1);
+    renderBlockEditor(draftCandidate.song);
+    return;
+  }
+  if (!(event.target instanceof HTMLSelectElement)) return;
   const select = event.target;
   const field = select.dataset.editorField;
   const blockIndex = Number(select.dataset.blockIndex);
@@ -725,6 +880,57 @@ blockEditor?.addEventListener("click", (event) => {
       song = moveLyricChord(song, blockIndex, phraseIndex, -1);
     } else if (action === "move-chord-right") {
       song = moveLyricChord(song, blockIndex, phraseIndex, 1);
+    } else if (action === "add-variant") {
+      song = convertLyricsToVariants(song, blockIndex);
+    } else if (action === "swap-variants") {
+      song = swapLyricVariants(song, blockIndex);
+    } else if (action === "remove-variant") {
+      const block = song.blocks[blockIndex];
+      if (block?.type !== "lyric" || !block.lyric_sets?.[1]) throw new Error("lyric_variants_required");
+      const hasContent = block.lyric_sets[1].some((line) => line.length > 0);
+      if (hasContent && !window.confirm("删除 B 歌词会丢弃 B 的内容；是否确认继续？")) return;
+      song = removeLyricVariant(song, blockIndex);
+    } else if (action === "split-variants") {
+      const block = song.blocks[blockIndex];
+      if (block?.type !== "lyric" || !block.lyric_sets) throw new Error("lyric_variants_required");
+      const hasContent = block.lyric_sets.slice(1).some((set) => set.some((line) => line.length > 0));
+      if (hasContent && !window.confirm("这会把 A/B 拆成独立歌词段，不会丢失歌词；是否确认继续？")) return;
+      song = splitVariantsIntoBlocks(song, blockIndex);
+    } else if (action === "start-combine-variants") {
+      variantCombine = { leftIndex: blockIndex };
+      renderBlockEditor(song);
+      return;
+    } else if (action === "select-combine-variant") {
+      if (!variantCombine) return;
+      variantCombine.rightIndex = blockIndex;
+      renderBlockEditor(song);
+      return;
+    } else if (action === "cancel-combine-variants") {
+      variantCombine = undefined;
+      renderBlockEditor(song);
+      return;
+    } else if (action === "confirm-combine-variants") {
+      if (variantCombine?.rightIndex === undefined) return;
+      song = combineLyricBlocksAsVariants(song, variantCombine.leftIndex, variantCombine.rightIndex);
+      variantCombine = undefined;
+    } else if (action === "bulk-next") {
+      if (!variantBulk?.leftIndexes.length) return;
+      variantBulk.phase = "right";
+      renderBlockEditor(song);
+      return;
+    } else if (action === "bulk-back") {
+      if (!variantBulk) return;
+      variantBulk.phase = "left";
+      renderBlockEditor(song);
+      return;
+    } else if (action === "bulk-cancel") {
+      variantBulk = undefined;
+      renderBlockEditor(song);
+      return;
+    } else if (action === "bulk-confirm") {
+      if (!variantBulk) return;
+      song = combineLyricRangesAsVariants(song, variantBulk.leftIndexes, variantBulk.rightIndexes);
+      variantBulk = undefined;
     } else return;
     applySongEdit(song);
   } catch (error) {
@@ -767,6 +973,12 @@ document.querySelectorAll<HTMLButtonElement>("[data-editor-global-action]").forE
   control.addEventListener("click", () => {
     if (!draftCandidate || publishGuard.locked) return;
     const action = control.dataset.editorGlobalAction;
+    if (action === "organize-variants") {
+      variantCombine = undefined;
+      variantBulk = variantBulk ? undefined : { phase: "left", leftIndexes: [], rightIndexes: [] };
+      renderBlockEditor(draftCandidate.song);
+      return;
+    }
     const lastPlayableIndex = Math.max(0, draftCandidate.song.blocks.findLastIndex(
       (block) => block.type !== "theory_legend"
     ));
