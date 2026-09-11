@@ -4,6 +4,10 @@ import {
   addLyricBlock,
   addLyricPhrase,
   applyCandidateSongEdit,
+  combineLyricBlocksAsVariants,
+  combineLyricRangesAsVariants,
+  compareLyricChordCompatibility,
+  convertLyricsToVariants,
   deleteLyricPhrase,
   deleteBlock,
   expandRepeatBlock,
@@ -12,10 +16,14 @@ import {
   mergeAdjacentLyricBlocks,
   moveLyricChord,
   moveBlock,
+  removeLyricVariant,
   splitLyricPhraseAt,
   splitLyricBlock,
+  splitVariantsIntoBlocks,
+  swapLyricVariants,
   summarizeSongChanges,
   updateRepeat,
+  updateLyricVariantLabel,
   updateLyricPhrase
 } from "../src/lib/candidate-editor";
 import { publishedSongToCandidate } from "../src/lib/published-song-edit";
@@ -48,6 +56,49 @@ function candidate() {
     }
   ];
   return SongCandidateSchema.parse(value);
+}
+
+function ordinaryLyricSong() {
+  const song = candidate().song;
+  song.blocks = [
+    {
+      id: "verse-a",
+      type: "lyric",
+      chords: ["| 1   5 |", "6m  4"],
+      lyrics: ["  A 内部 空格", "A 第二句"],
+      spacing: "normal",
+      section_role: "verse"
+    },
+    {
+      id: "instrument-1",
+      type: "instrument",
+      label: "间奏",
+      progression: "| 1 | 5 |"
+    },
+    {
+      id: "verse-b",
+      type: "lyric",
+      chords: ["|  1 5 |", "6m 4"],
+      lyrics: ["B 第一行", "B 第二句"],
+      spacing: "normal",
+      section_role: "verse"
+    },
+    {
+      id: "chorus-a",
+      type: "lyric",
+      chords: ["4", "5"],
+      lyrics: ["副歌 A 一", "副歌 A 二"],
+      spacing: "normal"
+    },
+    {
+      id: "chorus-b",
+      type: "lyric",
+      chords: ["4", "5"],
+      lyrics: ["副歌 B 一", "副歌 B 二"],
+      spacing: "normal"
+    }
+  ];
+  return song;
 }
 
 describe("candidate structure editor pure operations", () => {
@@ -186,6 +237,83 @@ describe("candidate structure editor pure operations", () => {
     expect(editable.song).toEqual(existing);
     expect(editable.query).toEqual({ title: existing.title, artist: existing.artist });
     expect(SongCandidateSchema.safeParse(editable).success).toBe(true);
+  });
+
+  it("converts ordinary lyrics to A/B without changing spaces or its input", () => {
+    const source = ordinaryLyricSong();
+    const converted = convertLyricsToVariants(source, 0);
+    expect(source.blocks[0]).toMatchObject({ lyrics: ["  A 内部 空格", "A 第二句"] });
+    expect(converted.blocks[0]).toMatchObject({
+      chords: ["| 1   5 |", "6m  4"],
+      lyric_sets: [["  A 内部 空格", "A 第二句"], ["", ""]],
+      variant_labels: ["A.", "B."]
+    });
+    expect("lyrics" in converted.blocks[0]).toBe(false);
+    expect(SongSchema.safeParse(converted).success).toBe(true);
+  });
+
+  it("edits, swaps, and removes B while retaining every additional lyric set", () => {
+    let song = convertLyricsToVariants(ordinaryLyricSong(), 0);
+    song = updateLyricPhrase(song, 0, 1, "lyric", "B  内部 空格", 1);
+    song = updateLyricVariantLabel(song, 0, 1, "B. 现场版");
+    song = swapLyricVariants(song, 0);
+    expect(song.blocks[0]).toMatchObject({
+      lyric_sets: [["", "B  内部 空格"], ["  A 内部 空格", "A 第二句"]],
+      variant_labels: ["B. 现场版", "A."]
+    });
+    song = removeLyricVariant(song, 0);
+    expect(song.blocks[0]).toMatchObject({ lyrics: ["", "B  内部 空格"] });
+
+    const threeSets = candidate().song;
+    const lyric = threeSets.blocks[0] as { lyric_sets: string[][]; variant_labels: string[] };
+    lyric.lyric_sets.push(["丙一", "丙二"]);
+    lyric.variant_labels.push("C");
+    const retained = removeLyricVariant(threeSets, 0);
+    expect(retained.blocks[0]).toMatchObject({ lyric_sets: [["甲一", "甲二"], ["丙一", "丙二"]] });
+  });
+
+  it("combines adjacent or separated ordinary blocks only when chord tokens match", () => {
+    const source = ordinaryLyricSong();
+    const compatibility = compareLyricChordCompatibility(
+      source.blocks[0] as Parameters<typeof compareLyricChordCompatibility>[0],
+      source.blocks[2] as Parameters<typeof compareLyricChordCompatibility>[1]
+    );
+    expect(compatibility).toEqual({ compatible: true });
+    const combined = combineLyricBlocksAsVariants(source, 0, 2);
+    expect(combined.blocks.map((block) => block.id)).toEqual(["verse-a", "instrument-1", "chorus-a", "chorus-b"]);
+    expect(combined.blocks[0]).toMatchObject({
+      chords: ["| 1   5 |", "6m  4"],
+      lyric_sets: [["  A 内部 空格", "A 第二句"], ["B 第一行", "B 第二句"]]
+    });
+    expect(() => combineLyricBlocksAsVariants(source, 0, 3)).toThrow("chord_token_mismatch");
+    const mismatchedLength = ordinaryLyricSong();
+    (mismatchedLength.blocks[2] as { chords: string[] }).chords.pop();
+    expect(() => combineLyricBlocksAsVariants(mismatchedLength, 0, 2)).toThrow("phrase_count_mismatch");
+  });
+
+  it("pairs non-adjacent ranges in one edit and keeps unselected blocks ordered", () => {
+    const source = ordinaryLyricSong();
+    const paired = combineLyricRangesAsVariants(source, [0, 3], [2, 4]);
+    expect(paired.blocks.map((block) => block.id)).toEqual(["verse-a", "instrument-1", "chorus-a"]);
+    expect(paired.blocks[0]).toMatchObject({ lyric_sets: [["  A 内部 空格", "A 第二句"], ["B 第一行", "B 第二句"]] });
+    expect(paired.blocks[2]).toMatchObject({ lyric_sets: [["副歌 A 一", "副歌 A 二"], ["副歌 B 一", "副歌 B 二"]] });
+    expect(SongSchema.safeParse(paired).success).toBe(true);
+  });
+
+  it("splits every lyric variant into unique ordinary blocks without losing content", () => {
+    const source = candidate().song;
+    const lyric = source.blocks[0] as { lyric_sets: string[][]; variant_labels: string[] };
+    lyric.lyric_sets.push(["丙一", "丙二"]);
+    lyric.variant_labels.push("C");
+    const split = splitVariantsIntoBlocks(source, 0);
+    expect(split.blocks.slice(0, 3).map((block) => block.id)).toEqual([
+      "verse-1", "verse-1-variant-2", "verse-1-variant-3"
+    ]);
+    expect(split.blocks.slice(0, 3).map((block) => (block as { lyrics: string[] }).lyrics)).toEqual([
+      ["甲一", "甲二"], ["乙一", "乙二"], ["丙一", "丙二"]
+    ]);
+    expect(new Set(split.blocks.map((block) => block.id)).size).toBe(split.blocks.length);
+    expect(SongSchema.safeParse(split).success).toBe(true);
   });
 });
 

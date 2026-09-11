@@ -820,7 +820,7 @@ button {
 .phrase-editor-row {
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
   margin: 0;
   padding: 0.6rem;
@@ -836,8 +836,108 @@ button {
 }
 
 .phrase-editor-actions {
-  grid-column: 1 / -1;
   flex-wrap: wrap;
+  padding-top: 0.5rem;
+}
+
+.phrase-editor-more {
+  min-width: 0;
+  grid-column: 1;
+}
+
+.phrase-editor-more summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--navy);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.phrase-editor-row .editor-field input {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+  white-space: pre;
+}
+
+.variant-actions,
+.variant-labels,
+.variant-bulk-panel,
+.variant-combine-preview {
+  min-width: 0;
+}
+
+.variant-labels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+}
+
+.variant-mode-note {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.variant-bulk-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  color: var(--navy);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.variant-bulk-select input {
+  inline-size: 1.2rem;
+  block-size: 1.2rem;
+}
+
+.variant-bulk-panel,
+.variant-combine-preview {
+  padding: 0.8rem;
+  border: 1px solid var(--blue);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--blue) 7%, var(--paper));
+}
+
+.variant-bulk-panel p,
+.variant-combine-preview p {
+  margin: 0.4rem 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.variant-pair-preview {
+  margin: 0.5rem 0;
+  padding-left: 1.2rem;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+}
+
+.variant-combine-rows {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.6rem 0;
+}
+
+.variant-combine-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.45rem;
+  padding: 0.45rem;
+  border-radius: 0.45rem;
+  background: var(--surface);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+  font-size: 0.72rem;
+}
+
+.variant-combine-row > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .block-editor-footer {
@@ -1763,11 +1863,14 @@ button {
   }
 
   .editor-meta-grid,
-  .phrase-editor-row {
+  .phrase-editor-row,
+  .variant-labels,
+  .variant-combine-row {
     grid-template-columns: 1fr;
   }
 
-  .phrase-editor-actions {
+  .phrase-editor-actions,
+  .phrase-editor-more {
     grid-column: 1;
   }
 

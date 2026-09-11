@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import song from "../src/content/songs/chen-qizhen-lvxing-de-yiyi.json";
+import gaosuWo from "../src/content/songs/cheer-chen-gaosu-wo.json";
 import luKou from "../src/content/songs/lu-kou-zhang-zhen-yue.json";
+import anheQiao from "../src/content/songs/song-dongye-anhe-qiao.json";
 import { DegreeExpressionSchema, SongSchema } from "../src/lib/song-schema";
 
 const songModules = import.meta.glob<{ default: unknown }>(
@@ -66,6 +68,13 @@ describe("song data", () => {
     expect(parsed.original_key).toBe("G♯");
     expect(parsed.degree_key).toBe("G");
     expect(parsed.capo).toBe(1);
+  });
+
+  it("keeps 告诉我 and 安和桥 A/B lyric sets schema-valid", () => {
+    const gaosu = SongSchema.parse(gaosuWo);
+    const anhe = SongSchema.parse(anheQiao);
+    expect(gaosu.blocks.some((block) => block.type === "lyric" && block.lyric_sets?.length === 2)).toBe(true);
+    expect(anhe.blocks.filter((block) => block.type === "lyric" && block.lyric_sets?.length === 2)).toHaveLength(6);
   });
 });
 
