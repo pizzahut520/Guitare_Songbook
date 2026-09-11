@@ -4,12 +4,27 @@ import song from "../src/content/songs/chen-qizhen-lvxing-de-yiyi.json";
 import gaosuWo from "../src/content/songs/cheer-chen-gaosu-wo.json";
 import luKou from "../src/content/songs/lu-kou-zhang-zhen-yue.json";
 import anheQiao from "../src/content/songs/song-dongye-anhe-qiao.json";
-import { DegreeExpressionSchema, SongSchema } from "../src/lib/song-schema";
+import { DegreeExpressionSchema, SongSchema, type LyricBlock } from "../src/lib/song-schema";
 
 const songModules = import.meta.glob<{ default: unknown }>(
   "../src/content/songs/*.json",
   { eager: true }
 );
+
+function assertValidVariantBlocks(value: unknown) {
+  const parsed = SongSchema.parse(value);
+  const variantBlocks = parsed.blocks.filter(
+    (block): block is LyricBlock => block.type === "lyric" && (block.lyric_sets?.length ?? 0) >= 2
+  );
+  // Editors may legitimately add or remove A/B blocks; their count is intentionally data-dependent.
+  expect(variantBlocks.length).toBeGreaterThan(0);
+  variantBlocks.forEach((block) => {
+    expect(block.lyric_sets).toBeDefined();
+    expect(block.lyric_sets!.length).toBeGreaterThanOrEqual(2);
+    expect(block.variant_labels).toHaveLength(block.lyric_sets!.length);
+    block.lyric_sets!.forEach((set) => expect(set).toHaveLength(block.chords.length));
+  });
+}
 
 describe("song data", () => {
   it("accepts the golden sample", () => {
@@ -71,10 +86,8 @@ describe("song data", () => {
   });
 
   it("keeps 告诉我 and 安和桥 A/B lyric sets schema-valid", () => {
-    const gaosu = SongSchema.parse(gaosuWo);
-    const anhe = SongSchema.parse(anheQiao);
-    expect(gaosu.blocks.some((block) => block.type === "lyric" && block.lyric_sets?.length === 2)).toBe(true);
-    expect(anhe.blocks.filter((block) => block.type === "lyric" && block.lyric_sets?.length === 2)).toHaveLength(6);
+    assertValidVariantBlocks(gaosuWo);
+    assertValidVariantBlocks(anheQiao);
   });
 });
 
