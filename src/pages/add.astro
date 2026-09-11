@@ -20,11 +20,19 @@ const songs = await getCollection("songs");
       <div class="add-page">
         <header class="add-page__header">
           <p class="eyebrow">PHASE 2C · EDIT, PREVIEW, PUBLISH</p>
-          <h1>生成歌曲候选</h1>
-          <p>先生成结构化草稿并人工核对；确认后可安全提交到 GitHub，等待自动验证和部署。</p>
+          <h1>添加歌曲候选</h1>
+          <p>可先由 AI 生成候选，或手动粘贴歌词后进入同一套结构编辑、预览和确认流程。</p>
         </header>
 
-        <section class="add-panel" aria-labelledby="search-title">
+        <section class="mode-selector" aria-labelledby="mode-title">
+          <h2 id="mode-title">添加方式</h2>
+          <div role="group" aria-label="添加方式">
+            <button type="button" class="mode-button" data-entry-mode="ai" aria-pressed="true">AI 生成</button>
+            <button type="button" class="mode-button" data-entry-mode="manual" aria-pressed="false">手动添加歌词</button>
+          </div>
+        </section>
+
+        <section class="add-panel" data-mode-panel="ai" aria-labelledby="search-title">
           <h2 id="search-title">查找歌曲</h2>
           <form data-generate-form>
             <label>
@@ -40,6 +48,30 @@ const songs = await getCollection("songs");
             </button>
           </form>
           <p class="add-status" data-generate-status role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="add-panel manual-entry-panel" data-mode-panel="manual" hidden aria-labelledby="manual-title">
+          <h2 id="manual-title">手动添加歌词</h2>
+          <p>不调用 AI；请只填写你能确认的事实信息。段落和和弦可在下一步编辑。</p>
+          <form data-manual-form>
+            <div class="manual-fields">
+              <label><span>歌名 <strong aria-hidden="true">*</strong></span><input name="title" required maxlength="100" autocomplete="off" /></label>
+              <label><span>歌手 <strong aria-hidden="true">*</strong></span><input name="artist" required maxlength="100" autocomplete="off" /></label>
+              <label><span>稳定 slug <strong aria-hidden="true">*</strong></span><input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="120" autocomplete="off" aria-describedby="manual-slug-help" /><small id="manual-slug-help">仅小写英文、数字与连字符，例如 <code>artist-song-title</code>。</small></label>
+              <label><span>歌词署名 <strong aria-hidden="true">*</strong></span><input name="lyrics_credit" required maxlength="100" autocomplete="off" /></label>
+              <label><span>作曲署名 <strong aria-hidden="true">*</strong></span><input name="music_credit" required maxlength="100" autocomplete="off" /></label>
+              <label><span>原调 <strong aria-hidden="true">*</strong></span><input name="original_key" required maxlength="20" autocomplete="off" /></label>
+              <label><span>级数基准 <strong aria-hidden="true">*</strong></span><input name="degree_key" required maxlength="20" autocomplete="off" /></label>
+              <label><span>Capo <strong aria-hidden="true">*</strong></span><input name="capo" type="number" min="0" max="12" value="0" required /></label>
+              <label><span>语言 <strong aria-hidden="true">*</strong></span><input name="language" required maxlength="50" autocomplete="off" /></label>
+              <label><span>标签 <small>可选，以逗号分隔</small></span><input name="tags" maxlength="200" autocomplete="off" /></label>
+              <label><span>来源参考 <small>可选</small></span><input name="source_reference" maxlength="500" autocomplete="off" /></label>
+              <label><span>版权状态 <strong aria-hidden="true">*</strong></span><select name="copyright_status" required><option value="private_reference">私人参考</option><option value="public_domain">公版</option><option value="licensed">已获授权</option></select></label>
+            </div>
+            <label class="manual-lyrics"><span>歌词 <strong aria-hidden="true">*</strong></span><textarea name="lyrics" required rows="14" aria-describedby="manual-lyrics-help"></textarea><small id="manual-lyrics-help">保留原有文字、标点和空格；空行会成为可编辑的段落边界。</small></label>
+            <button class="primary-button" type="submit" data-manual-button>进入段落编辑</button>
+          </form>
+          <p class="add-status" data-manual-status role="status" aria-live="polite"></p>
         </section>
 
         <section class="candidate-panel" data-candidate hidden aria-labelledby="candidate-title">

@@ -52,6 +52,9 @@ export const SongCandidateSchema = z.object({
   // songs in the candidate envelope. AI output remains constrained by
   // SongCandidateOutputSchema above.
   song: SongSchema,
+  // Manual browser drafts may become valid without an external source URL.
+  // SongCandidateOutputSchema above remains strict for DeepSeek output.
+  sources: z.array(CandidateSourceSchema).max(12),
   usage: CandidateUsageSchema.optional()
 });
 

@@ -2,7 +2,10 @@ import type { SongCandidate } from "./song-candidate-schema";
 import { findDuplicateSong, type SongIndexEntry } from "./song-index";
 import type { LyricBlock, SongBlock } from "./song-schema";
 
-export type EditableSong = SongCandidate["song"];
+// Browser-only draft shape: empty chord positions are allowed until validation.
+export type EditableLyricBlock = Omit<LyricBlock, "chords"> & { chords: string[] };
+export type EditableSongBlock = Exclude<SongBlock, { type: "lyric" }> | EditableLyricBlock;
+export type EditableSong = Omit<SongCandidate["song"], "blocks"> & { blocks: EditableSongBlock[] };
 
 function copySong(song: EditableSong): EditableSong {
   return structuredClone(song);
@@ -23,10 +26,10 @@ export function updateBlock(
 function lyricAt(song: EditableSong, blockIndex: number): LyricBlock {
   const block = song.blocks[blockIndex];
   if (!block || block.type !== "lyric") throw new Error("lyric_block_required");
-  return block;
+  return block as LyricBlock;
 }
 
-export function uniqueBlockId(blocks: SongBlock[], preferred: string): string {
+export function uniqueBlockId(blocks: EditableSongBlock[], preferred: string): string {
   const stem = preferred.replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "block";
   const used = new Set(blocks.map((block) => block.id));
   if (!used.has(stem)) return stem;
@@ -270,13 +273,17 @@ export function markBlockAsRepeat(
   return song;
 }
 
-export function addLyricBlock(source: EditableSong, afterIndex = source.blocks.length - 1): EditableSong {
+export function addLyricBlock(
+  source: EditableSong,
+  afterIndex = source.blocks.length - 1,
+  initialChord = "1"
+): EditableSong {
   const song = copySong(source);
   const id = uniqueBlockId(song.blocks, "verse-new");
   song.blocks.splice(Math.max(0, Math.min(song.blocks.length, afterIndex + 1)), 0, {
     id,
     type: "lyric",
-    chords: ["1"],
+    chords: [initialChord],
     lyrics: [""],
     section_role: "verse",
     section_label: "新段落",

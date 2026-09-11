@@ -1,5 +1,10 @@
 import { SongCandidateSchema, type SongCandidate } from "../lib/song-candidate-schema";
 import {
+  createManualLyricDraft,
+  type ManualEditableCandidate,
+  type ManualSongFields
+} from "../lib/manual-lyric-draft";
+import {
   findDuplicateSong,
   SongIndexSchema,
   type SongIndexEntry
@@ -29,8 +34,11 @@ import { renderSongPreview } from "../lib/song-preview";
 import type { SongBlock } from "../lib/song-schema";
 
 const form = document.querySelector<HTMLFormElement>("[data-generate-form]");
+const manualForm = document.querySelector<HTMLFormElement>("[data-manual-form]");
 const button = document.querySelector<HTMLButtonElement>("[data-generate-button]");
+const manualButton = document.querySelector<HTMLButtonElement>("[data-manual-button]");
 const status = document.querySelector<HTMLElement>("[data-generate-status]");
+const manualStatus = document.querySelector<HTMLElement>("[data-manual-status]");
 const candidatePanel = document.querySelector<HTMLElement>("[data-candidate]");
 const duplicateNotice = document.querySelector<HTMLElement>("[data-duplicate]");
 const duplicateLink = document.querySelector<HTMLAnchorElement>("[data-duplicate-link]");
@@ -55,7 +63,7 @@ const isEditMode = Boolean(editRoot && editSlug);
 let publishGuard = createPublishGuard();
 
 let currentCandidate: SongCandidate | undefined;
-let draftCandidate: SongCandidate | undefined;
+let draftCandidate: ManualEditableCandidate | undefined;
 let currentDuplicate: SongIndexEntry | undefined;
 let currentSongIndex: SongIndexEntry[] = [];
 let githubConfigured = false;
@@ -65,6 +73,8 @@ let previewHarmonyMode: "degree" | "chord" = "degree";
 let expectedSha: string | undefined;
 let originalCandidate: SongCandidate | undefined;
 let editDirty = false;
+let isManualDraft = false;
+let entryMode: "ai" | "manual" = "ai";
 
 function setText(selector: string, value: string | number) {
   const element = document.querySelector<HTMLElement>(selector);
@@ -83,7 +93,7 @@ function renderList(selector: string, values: string[], emptyText: string) {
   );
 }
 
-function renderCandidate(candidate: SongCandidate) {
+function renderCandidate(candidate: ManualEditableCandidate) {
   setText("[data-candidate-title]", candidate.matched_song.title);
   setText("[data-candidate-artist]", candidate.matched_song.artist);
   setText(
@@ -100,8 +110,12 @@ function renderCandidate(candidate: SongCandidate) {
 
   const sources = document.querySelector<HTMLUListElement>("[data-candidate-sources]");
   sources?.replaceChildren(
-    ...candidate.sources.map((source) => {
+    ...(candidate.sources.length ? candidate.sources : [{ title: "用户直接提供的文本", url: "", source_type: "other" as const }]).map((source) => {
       const item = document.createElement("li");
+      if (!source.url) {
+        item.textContent = source.title;
+        return item;
+      }
       const link = document.createElement("a");
       link.href = source.url;
       link.target = "_blank";
@@ -329,7 +343,7 @@ function renderBlockEditor(song: EditableSong) {
   blockEditor.replaceChildren(...cards);
 }
 
-function validationPaths(candidate: SongCandidate): string[] {
+function validationPaths(candidate: ManualEditableCandidate): string[] {
   const parsed = SongCandidateSchema.safeParse(candidate);
   return parsed.success
     ? []
@@ -474,6 +488,54 @@ async function readApiJson(response: Response): Promise<unknown> {
   }
 }
 
+function formHasValues(target?: HTMLFormElement | null): boolean {
+  if (!target) return false;
+  return [...target.elements].some((element) => {
+    if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+      return element.value.trim() !== "" && element.value !== element.defaultValue;
+    }
+    if (element instanceof HTMLSelectElement) {
+      return [...element.options].some((option) => option.selected !== option.defaultSelected);
+    }
+    return false;
+  });
+}
+
+function clearCandidateWorkspace() {
+  publishGuard = createPublishGuard();
+  currentCandidate = undefined;
+  draftCandidate = undefined;
+  currentDuplicate = undefined;
+  currentSongIndex = [];
+  candidatePanel && (candidatePanel.hidden = true);
+  blockEditor?.replaceChildren();
+  preview?.replaceChildren();
+  renderEditorValidation([]);
+  showDuplicate(undefined);
+  if (confirmation) confirmation.checked = false;
+  if (publishResult) publishResult.hidden = true;
+}
+
+document.querySelectorAll<HTMLButtonElement>("[data-entry-mode]").forEach((control) => {
+  control.addEventListener("click", () => {
+    const next = control.dataset.entryMode === "manual" ? "manual" : "ai";
+    if (next === entryMode) return;
+    const currentForm = entryMode === "ai" ? form : manualForm;
+    const destinationForm = next === "ai" ? form : manualForm;
+    if ((draftCandidate || formHasValues(currentForm) || formHasValues(destinationForm)) && !window.confirm(
+      "切换添加方式会清除当前尚未进入曲库的候选；已填写的表单内容会保留。是否继续？"
+    )) return;
+    clearCandidateWorkspace();
+    entryMode = next;
+    document.querySelectorAll<HTMLElement>("[data-mode-panel]").forEach((panel) => {
+      panel.hidden = panel.dataset.modePanel !== entryMode;
+    });
+    document.querySelectorAll<HTMLButtonElement>("[data-entry-mode]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button === control));
+    });
+  });
+});
+
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const data = new FormData(form);
@@ -486,16 +548,8 @@ form?.addEventListener("submit", async (event) => {
   status.className = "add-status is-loading";
   status.textContent = "正在核对歌曲版本、来源与和弦结构，可能需要几十秒。";
   if (candidatePanel) candidatePanel.hidden = true;
-  publishGuard = createPublishGuard();
-  currentCandidate = undefined;
-  draftCandidate = undefined;
-  currentSongIndex = [];
-  blockEditor?.replaceChildren();
-  preview?.replaceChildren();
-  renderEditorValidation([]);
-  showDuplicate(undefined);
-  if (confirmation) confirmation.checked = false;
-  if (publishResult) publishResult.hidden = true;
+  clearCandidateWorkspace();
+  isManualDraft = false;
 
   try {
     const response = await fetch("/api/songs/generate", {
@@ -527,6 +581,47 @@ form?.addEventListener("submit", async (event) => {
   } finally {
     button.disabled = false;
     button.textContent = "查找并生成";
+  }
+});
+
+manualForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!manualButton || !manualStatus) return;
+  const data = new FormData(manualForm);
+  const value = (name: string) => String(data.get(name) ?? "").trim();
+  const fields: ManualSongFields = {
+    title: value("title"), artist: value("artist"), slug: value("slug"),
+    lyricsCredit: value("lyrics_credit"), musicCredit: value("music_credit"),
+    originalKey: value("original_key"), degreeKey: value("degree_key"),
+    capo: Number(data.get("capo")), language: value("language"),
+    tags: value("tags").split(",").map((tag) => tag.trim()).filter(Boolean),
+    ...(value("source_reference") ? { sourceReference: value("source_reference") } : {}),
+    copyrightStatus: value("copyright_status") as ManualSongFields["copyrightStatus"]
+  };
+  if (!manualForm.reportValidity()) return;
+  manualButton.disabled = true;
+  try {
+    const draft = createManualLyricDraft(fields, String(data.get("lyrics") ?? ""));
+    clearCandidateWorkspace();
+    isManualDraft = true;
+    draftCandidate = draft;
+    currentSongIndex = await loadSongIndex();
+    currentDuplicate = findDuplicateSong(currentSongIndex, draft.song);
+    renderCandidate(draft);
+    renderBlockEditor(draft.song);
+    renderPreview(draft.song);
+    renderEditorValidation(validationPaths(draft));
+    showDuplicate(currentDuplicate);
+    manualStatus.className = "add-status is-success";
+    manualStatus.textContent = "歌词草稿已进入段落编辑。请补全每个级数和弦后再确认提交。";
+  } catch (error) {
+    manualStatus.className = "add-status is-error";
+    manualStatus.textContent = error instanceof Error && error.message === "manual_lyrics_required"
+      ? "请至少输入一行非空歌词。"
+      : "无法建立手动歌词草稿，请检查填写内容。";
+  } finally {
+    manualButton.disabled = false;
+    updatePublishState();
   }
 });
 
@@ -676,7 +771,7 @@ document.querySelectorAll<HTMLButtonElement>("[data-editor-global-action]").forE
       (block) => block.type !== "theory_legend"
     ));
     const song = action === "add-lyric-block"
-      ? addLyricBlock(draftCandidate.song, lastPlayableIndex)
+      ? addLyricBlock(draftCandidate.song, lastPlayableIndex, isManualDraft ? "" : "1")
       : addInstrumentBlock(draftCandidate.song, lastPlayableIndex);
     applySongEdit(song);
   });
@@ -750,6 +845,7 @@ async function initializePublishedEdit() {
     originalCandidate = structuredClone(candidate.data);
     draftCandidate = candidate.data;
     currentCandidate = candidate.data;
+    isManualDraft = false;
     renderCandidate(candidate.data);
     currentSongIndex = (await loadSongIndex()).filter((entry) => entry.slug !== editSlug);
     showDuplicate(findDuplicateSong(currentSongIndex, candidate.data.song));
