@@ -130,7 +130,7 @@ export function swapLyricVariants(source: EditableSong, blockIndex: number): Edi
   return song;
 }
 
-/** Remove a variant. Removing B from exactly A/B restores the ordinary lyrics shape. */
+/** Removing down to one lyric set restores the mutually-exclusive ordinary lyrics shape. */
 export function removeLyricVariant(
   source: EditableSong,
   blockIndex: number,
@@ -142,8 +142,8 @@ export function removeLyricVariant(
   if (lyricSetIndex < 0 || lyricSetIndex >= sets.length || sets.length < 2) {
     throw new Error("lyric_set_not_found");
   }
-  if (sets.length === 2 && lyricSetIndex === 1) {
-    block.lyrics = [...sets[0]];
+  if (sets.length === 2) {
+    block.lyrics = [...sets[lyricSetIndex === 0 ? 1 : 0]];
     delete block.lyric_sets;
     delete block.variant_labels;
     return song;
@@ -220,6 +220,29 @@ export function combineLyricRangesAsVariants(
   }
   [...rightIndexes].sort((left, right) => right - left).forEach((index) => song.blocks.splice(index, 1));
   return song;
+}
+
+/** Resolve current block IDs at confirmation time so moving blocks cannot change the selected pair. */
+export function combineLyricBlockIdsAsVariants(
+  source: EditableSong,
+  leftIds: string[],
+  rightIds: string[]
+): EditableSong {
+  if (!leftIds.length || leftIds.length !== rightIds.length) throw new Error("lyric_variant_pair_count_mismatch");
+  const selected = [...leftIds, ...rightIds];
+  if (new Set(selected).size !== selected.length) throw new Error("duplicate_selection");
+  const positions = new Map(source.blocks.map((block, index) => [block.id, index]));
+  const leftIndexes = leftIds.map((id) => {
+    const index = positions.get(id);
+    if (index === undefined) throw new Error("block_not_found");
+    return index;
+  });
+  const rightIndexes = rightIds.map((id) => {
+    const index = positions.get(id);
+    if (index === undefined) throw new Error("block_not_found");
+    return index;
+  });
+  return combineLyricRangesAsVariants(source, leftIndexes, rightIndexes);
 }
 
 export function updateLyricPhrase(

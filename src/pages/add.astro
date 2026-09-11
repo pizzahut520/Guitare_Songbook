@@ -68,8 +68,29 @@ const songs = await getCollection("songs");
               <label><span>来源参考 <small>可选</small></span><input name="source_reference" maxlength="500" autocomplete="off" /></label>
               <label><span>版权状态 <strong aria-hidden="true">*</strong></span><select name="copyright_status" required><option value="private_reference">私人参考</option><option value="public_domain">公版</option><option value="licensed">已获授权</option></select></label>
             </div>
-            <label class="manual-lyrics"><span>歌词 <strong aria-hidden="true">*</strong></span><textarea name="lyrics" required rows="14" aria-describedby="manual-lyrics-help"></textarea><small id="manual-lyrics-help">保留原有文字、标点和空格；空行会成为可编辑的段落边界。</small></label>
-            <button class="primary-button" type="submit" data-manual-button>进入段落编辑</button>
+            <label class="manual-lyrics"><span>歌词 <strong aria-hidden="true">*</strong></span>
+              <div class="manual-marker-actions" aria-label="插入歌词结构标记">
+                <button type="button" class="editor-button" data-manual-marker="[主歌]" aria-label="在歌词光标处插入主歌标记">插入主歌</button>
+                <button type="button" class="editor-button" data-manual-marker="[主歌 A]" aria-label="在歌词光标处插入主歌 A 标记">插入主歌 A</button>
+                <button type="button" class="editor-button" data-manual-marker="[主歌 B]" aria-label="在歌词光标处插入主歌 B 标记">插入主歌 B</button>
+                <button type="button" class="editor-button" data-manual-marker="[副歌]" aria-label="在歌词光标处插入副歌标记">插入副歌</button>
+                <button type="button" class="editor-button" data-manual-marker="[Bridge]" aria-label="在歌词光标处插入 Bridge 标记">插入 Bridge</button>
+                <button type="button" class="editor-button" data-manual-marker="[尾段]" aria-label="在歌词光标处插入尾段标记">插入尾段</button>
+              </div>
+              <textarea name="lyrics" required rows="14" aria-describedby="manual-lyrics-help"></textarea><small id="manual-lyrics-help">保留原有文字、标点和空格；可加入结构标记，解析和编辑均不调用 AI。</small>
+            </label>
+            <details class="manual-marker-help"><summary>标记格式说明</summary><pre>[主歌]
+第一行
+第二行
+
+[副歌]
+副歌第一行
+
+[主歌 A | 第一组]
+A 第一行
+[主歌 B | 第一组]
+B 第一行</pre><p>A/B 对应行共享一套和弦；创建草稿后在编辑器补全级数和弦。刷新会丢失未提交草稿。</p></details>
+            <button class="primary-button" type="submit" data-manual-button>解析并预览结构</button>
           </form>
           <p class="add-status" data-manual-status role="status" aria-live="polite"></p>
         </section>
