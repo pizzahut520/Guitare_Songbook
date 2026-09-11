@@ -1,6 +1,7 @@
 import { formatHarmony, keyAtTranspose } from "./music";
 import { buildSongRenderBlocks, gridTemplate, lyricRows } from "./song-render-model";
 import type { Song } from "./song-schema";
+import type { EditableSong } from "./candidate-editor";
 
 export interface PreviewOptions {
   mode: "degree" | "chord";
@@ -22,7 +23,7 @@ function element<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-function renderHeader(song: Song, options: PreviewOptions): HTMLElement {
+function renderHeader(song: Song | EditableSong, options: PreviewOptions): HTMLElement {
   const header = element("header", "song-header");
   const title = element("div", "song-header__title");
   title.append(
@@ -52,11 +53,12 @@ function renderHeader(song: Song, options: PreviewOptions): HTMLElement {
   return header;
 }
 
-function harmony(value: string, song: Song, options: PreviewOptions): string {
+function harmony(value: string, song: Song | EditableSong, options: PreviewOptions): string {
+  if (!value.trim()) return "";
   return formatHarmony(value, song.degree_key, options.mode, options.transpose);
 }
 
-export function renderSongPreview(container: HTMLElement, song: Song, options: PreviewOptions): void {
+export function renderSongPreview(container: HTMLElement, song: Song | EditableSong, options: PreviewOptions): void {
   const article = element("article", "song-sheet song-sheet--preview");
   article.dataset.songSheet = "preview";
   article.dataset.degreeKey = song.degree_key;

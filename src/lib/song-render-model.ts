@@ -1,6 +1,7 @@
 import type { Song, SongBlock } from "./song-schema";
+import type { EditableSong, EditableSongBlock } from "./candidate-editor";
 
-export type RenderableBlock = Exclude<SongBlock, { type: "repeat" }>;
+export type RenderableBlock = Exclude<SongBlock | EditableSongBlock, { type: "repeat" }>;
 
 export interface RenderBlock {
   renderId: string;
@@ -40,7 +41,7 @@ export function lyricRows(block: Extract<RenderableBlock, { type: "lyric" }>): s
   return block.lyrics ? [block.lyrics] : block.lyric_sets ?? [];
 }
 
-export function buildSongRenderBlocks(song: Pick<Song, "blocks">): RenderBlock[] {
+export function buildSongRenderBlocks(song: Pick<Song | EditableSong, "blocks">): RenderBlock[] {
   const playable = new Map<string, RenderableBlock>();
   const rendered: RenderBlock[] = [];
   for (const block of song.blocks) {
