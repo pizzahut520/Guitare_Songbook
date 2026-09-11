@@ -177,6 +177,7 @@ describe("GitHub Contents provider with mocked fetch", () => {
 
   it.each([
     ["malformed JSON", () => new Response("{", { status: 200, headers: { "content-type": "application/json", "x-github-request-id": "request-1" } }), "invalid_response_json"],
+    ["non-object JSON", () => response(200, null), "invalid_response_json"],
     ["missing SHA", () => response(200, { encoding: "base64", content: encodeSong(song) }), "missing_sha"],
     ["missing content", () => response(200, { sha: "abcdef1234567", encoding: "base64" }), "missing_content"],
     ["unsupported encoding", () => response(200, { sha: "abcdef1234567", encoding: "utf-8", content: "{}" }), "unsupported_encoding"],

@@ -81,7 +81,8 @@ function base64Utf8(value: string): string {
 
 function decodeBase64Utf8(value: string): string {
   const binary = atob(value.replace(/\s+/g, ""));
-  return new TextDecoder().decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
+  return new TextDecoder("utf-8", { fatal: true })
+    .decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
 }
 
 function requestId(response: Response): string | undefined {
@@ -203,27 +204,33 @@ export class GitHubContentsProvider {
       throw new GitHubProviderError("github_upstream_error", "request_failed", { stage: "request_failed" });
     }
     if (!response.ok) throw await mappedError(response);
-    let payload: { sha?: unknown; content?: unknown; encoding?: unknown };
+    let payload: unknown;
     try {
-      payload = await response.json() as typeof payload;
+      payload = await response.json();
     } catch {
       throw new GitHubProviderError(
         "github_upstream_error", "invalid_response_json", responseDiagnostic(response, "invalid_response_json")
       );
     }
-    const diagnostic = (stage: GitHubDiagnosticStage) => responseDiagnostic(response, stage, payload);
-    if (typeof payload.sha !== "string" || !/^[a-f0-9]{7,64}$/i.test(payload.sha)) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      throw new GitHubProviderError(
+        "github_upstream_error", "invalid_response_json", responseDiagnostic(response, "invalid_response_json")
+      );
+    }
+    const contents = payload as { sha?: unknown; content?: unknown; encoding?: unknown };
+    const diagnostic = (stage: GitHubDiagnosticStage) => responseDiagnostic(response, stage, contents);
+    if (typeof contents.sha !== "string" || !/^[a-f0-9]{7,64}$/i.test(contents.sha)) {
       throw new GitHubProviderError("github_upstream_error", "missing_sha", diagnostic("missing_sha"));
     }
-    if (typeof payload.content !== "string") {
+    if (typeof contents.content !== "string") {
       throw new GitHubProviderError("github_upstream_error", "missing_content", diagnostic("missing_content"));
     }
-    if (payload.encoding !== "base64") {
+    if (contents.encoding !== "base64") {
       throw new GitHubProviderError("github_upstream_error", "unsupported_encoding", diagnostic("unsupported_encoding"));
     }
     let decoded: string;
     try {
-      decoded = decodeBase64Utf8(payload.content);
+      decoded = decodeBase64Utf8(contents.content);
     } catch {
       throw new GitHubProviderError("github_upstream_error", "base64_decode_failed", diagnostic("base64_decode_failed"));
     }
@@ -237,7 +244,7 @@ export class GitHubContentsProvider {
     if (!song.success) {
       throw new GitHubProviderError("github_upstream_error", "song_schema_failed", diagnostic("song_schema_failed"));
     }
-    return { sha: payload.sha, song: song.data };
+    return { sha: contents.sha, song: song.data };
   }
 
   async checkRepositoryStatus(): Promise<GitHubRepositoryStatus> {

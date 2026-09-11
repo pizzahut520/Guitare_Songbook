@@ -387,6 +387,7 @@ async function githubStatus(env: Env, dependencies: WorkerDependencies): Promise
     return jsonResponse({
       ...status,
       content_readable: contentReadable,
+      effective_repository: repository,
       effective_branch: branch,
       ...(contentReadError ? { content_read_error: contentReadError } : {})
     });

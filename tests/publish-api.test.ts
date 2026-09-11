@@ -184,6 +184,7 @@ describe("secure song publish API", () => {
     const body = JSON.stringify(await response.json());
     expect(body).toContain('"push_permission":true');
     expect(body).toContain('"content_readable":true');
+    expect(body).toContain('"effective_repository":"pizzahut520/Guitare_Songbook"');
     expect(body).toContain('"effective_branch":"main"');
     expect(body).not.toContain("test-only-github-token");
   });
@@ -214,6 +215,7 @@ describe("secure song publish API", () => {
     expect(createGitHubProvider).toHaveBeenCalledWith("test-only-github-token", "owner/configured-repository", "release");
     expect(body).toContain('"content_readable":false');
     expect(body).toContain('"content_read_error":"unsupported_encoding"');
+    expect(body).toContain('"effective_repository":"owner/configured-repository"');
     expect(body).toContain('"effective_branch":"release"');
     expect(body).not.toContain("test-only-github-token");
   });
