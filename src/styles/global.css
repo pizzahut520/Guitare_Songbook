@@ -792,7 +792,8 @@ button {
 }
 
 .editor-field input,
-.editor-field select {
+.editor-field select,
+.editor-field textarea {
   min-width: 0;
   width: 100%;
   min-height: 2.75rem;
@@ -855,9 +856,20 @@ button {
   font-weight: 700;
 }
 
-.phrase-editor-row .editor-field input {
+.phrase-editor-row .editor-field input,
+.phrase-editor-row .editor-field textarea {
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+}
+
+.phrase-editor-row .editor-field input {
   white-space: pre;
+  overflow-x: auto;
+}
+
+.phrase-editor-row .editor-field textarea {
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .variant-actions,
@@ -939,6 +951,25 @@ button {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+
+.manual-marker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.manual-marker-help {
+  margin: 0.75rem 0;
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.manual-marker-help summary { cursor: pointer; color: var(--navy); font-weight: 700; }
+.manual-marker-help pre { overflow-x: auto; white-space: pre-wrap; color: var(--ink); }
 
 .block-editor-footer {
   flex-wrap: wrap;

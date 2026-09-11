@@ -1,6 +1,8 @@
 import { SongCandidateSchema, type SongCandidate } from "../lib/song-candidate-schema";
 import {
   createManualLyricDraft,
+  ManualLyricsParseError,
+  parseAnnotatedLyrics,
   type ManualEditableCandidate,
   type ManualSongFields
 } from "../lib/manual-lyric-draft";
@@ -16,7 +18,7 @@ import {
   addInstrumentBlock,
   applyCandidateSongEdit,
   combineLyricBlocksAsVariants,
-  combineLyricRangesAsVariants,
+  combineLyricBlockIdsAsVariants,
   compareLyricChordCompatibility,
   convertLyricsToVariants,
   deleteBlock,
@@ -49,6 +51,7 @@ const button = document.querySelector<HTMLButtonElement>("[data-generate-button]
 const manualButton = document.querySelector<HTMLButtonElement>("[data-manual-button]");
 const status = document.querySelector<HTMLElement>("[data-generate-status]");
 const manualStatus = document.querySelector<HTMLElement>("[data-manual-status]");
+const manualLyrics = manualForm?.querySelector<HTMLTextAreaElement>('textarea[name="lyrics"]');
 const candidatePanel = document.querySelector<HTMLElement>("[data-candidate]");
 const duplicateNotice = document.querySelector<HTMLElement>("[data-duplicate]");
 const duplicateLink = document.querySelector<HTMLAnchorElement>("[data-duplicate-link]");
@@ -86,7 +89,7 @@ let editDirty = false;
 let isManualDraft = false;
 let entryMode: "ai" | "manual" = "ai";
 let variantCombine: { leftIndex: number; rightIndex?: number } | undefined;
-let variantBulk: { phase: "left" | "right"; leftIndexes: number[]; rightIndexes: number[] } | undefined;
+let variantBulk: { phase: "left" | "right"; leftIds: string[]; rightIds: string[] } | undefined;
 
 function setText(selector: string, value: string | number) {
   const element = document.querySelector<HTMLElement>(selector);
@@ -223,6 +226,16 @@ function priorPlayableBlocks(song: EditableSong, blockIndex: number) {
   );
 }
 
+function lyricInput(value: string, blockIndex: number) {
+  const input = node("textarea");
+  input.rows = 1;
+  input.value = value;
+  input.dataset.editorField = "phrase-lyric";
+  input.dataset.blockIndex = String(blockIndex);
+  input.setAttribute("aria-label", "歌词");
+  return input;
+}
+
 function isOrdinaryLyric(
   block: EditableSongBlock | undefined
 ): boolean {
@@ -308,15 +321,18 @@ function renderBlockEditor(song: EditableSong) {
             blockIndex
           );
           label.dataset.lyricSetIndex = String(lyricSetIndex);
-          labels.append(fieldLabel(`歌词组 ${lyricSetIndex + 1} 标签`, label));
+          const labelField = fieldLabel(`歌词组 ${lyricSetIndex + 1} 标签`, label);
+          const removeSet = actionButton(`删除歌词组 ${lyricSetIndex + 1}`, "remove-variant", blockIndex);
+          removeSet.dataset.lyricSetIndex = String(lyricSetIndex);
+          removeSet.disabled = block.lyric_sets!.length < 2;
+          labelField.append(removeSet);
+          labels.append(labelField);
         });
         card.append(labels);
         const variantActions = node("div", "block-editor-footer variant-actions");
         const swap = actionButton("交换 A/B", "swap-variants", blockIndex);
         swap.disabled = block.lyric_sets.length < 2;
-        const remove = actionButton("删除 B，恢复普通歌词", "remove-variant", blockIndex);
-        remove.disabled = block.lyric_sets.length < 2;
-        variantActions.append(swap, remove, actionButton("拆成独立歌词块", "split-variants", blockIndex));
+        variantActions.append(swap, actionButton("拆成独立歌词块", "split-variants", blockIndex));
         card.append(variantActions);
       }
       const phrases = node("div", "phrase-editor");
@@ -329,11 +345,11 @@ function renderBlockEditor(song: EditableSong) {
         phrase.append(fieldLabel("级数和弦", chordInput));
         const rows = block.lyrics ? [block.lyrics] : block.lyric_sets ?? [];
         rows.forEach((row, lyricSetIndex) => {
-          const lyricInput = textInput(row[phraseIndex] ?? "", "phrase-lyric", blockIndex);
-          lyricInput.dataset.phraseIndex = String(phraseIndex);
-          lyricInput.dataset.lyricSetIndex = String(lyricSetIndex);
+          const lyricsControl = lyricInput(row[phraseIndex] ?? "", blockIndex);
+          lyricsControl.dataset.phraseIndex = String(phraseIndex);
+          lyricsControl.dataset.lyricSetIndex = String(lyricSetIndex);
           const variant = block.variant_labels?.[lyricSetIndex];
-          phrase.append(fieldLabel(variant ? `歌词 ${variant}` : rows.length > 1 ? `歌词组 ${lyricSetIndex + 1}` : "歌词", lyricInput));
+          phrase.append(fieldLabel(variant ? `歌词 ${variant}` : rows.length > 1 ? `歌词组 ${lyricSetIndex + 1}` : "歌词", lyricsControl));
         });
         const more = node("details", "phrase-editor-more");
         more.append(node("summary", undefined, "更多操作"));
@@ -409,9 +425,9 @@ function renderBlockEditor(song: EditableSong) {
       const selector = node("label", "variant-bulk-select");
       const checkbox = node("input");
       checkbox.type = "checkbox";
-      checkbox.dataset.bulkVariantIndex = String(blockIndex);
-      const selected = variantBulk.phase === "left" ? variantBulk.leftIndexes : variantBulk.rightIndexes;
-      checkbox.checked = selected.includes(blockIndex);
+      checkbox.dataset.bulkVariantId = block.id;
+      const selected = variantBulk.phase === "left" ? variantBulk.leftIds : variantBulk.rightIds;
+      checkbox.checked = selected.includes(block.id);
       selector.append(checkbox, node("span", undefined, `选择为 ${variantBulk.phase === "left" ? "A" : "B"}`));
       heading.append(selector);
     }
@@ -422,11 +438,13 @@ function renderBlockEditor(song: EditableSong) {
     const phaseName = variantBulk.phase === "left" ? "A" : "B";
     bulkPanel.append(node("strong", undefined, `整理为 A/B：选择歌词 ${phaseName}`));
     bulkPanel.append(node("p", undefined, "可选择不相邻段落；系统会按选择顺序配对，并保留 A 的和弦空格。"));
-    if (variantBulk.phase === "right" && variantBulk.leftIndexes.length && variantBulk.leftIndexes.length === variantBulk.rightIndexes.length) {
+    if (variantBulk.phase === "right" && variantBulk.leftIds.length && variantBulk.leftIds.length === variantBulk.rightIds.length) {
       const previewList = node("ul", "variant-pair-preview");
-      variantBulk.leftIndexes.forEach((leftIndex, pairIndex) => {
-        const rightIndex = variantBulk!.rightIndexes[pairIndex];
-        const item = node("li", undefined, `${song.blocks[leftIndex]?.id} ↔ ${song.blocks[rightIndex]?.id}：${variantCompatibilityText(song.blocks[leftIndex], song.blocks[rightIndex])}`);
+      variantBulk.leftIds.forEach((leftId, pairIndex) => {
+        const rightId = variantBulk!.rightIds[pairIndex];
+        const left = song.blocks.find((block) => block.id === leftId);
+        const right = song.blocks.find((block) => block.id === rightId);
+        const item = node("li", undefined, `${leftId} ↔ ${rightId}：${variantCompatibilityText(left, right)}`);
         previewList.append(item);
       });
       bulkPanel.append(previewList);
@@ -434,16 +452,17 @@ function renderBlockEditor(song: EditableSong) {
     const bulkActions = node("div", "block-editor-footer");
     if (variantBulk.phase === "left") {
       const next = actionButton("继续选择 B", "bulk-next", -1);
-      next.disabled = variantBulk.leftIndexes.length === 0;
+      next.disabled = variantBulk.leftIds.length === 0;
       bulkActions.append(next);
     } else {
       const back = actionButton("返回选择 A", "bulk-back", -1);
       const confirm = actionButton("确认整理为 A/B", "bulk-confirm", -1);
-      const equalCount = variantBulk.leftIndexes.length > 0 && variantBulk.leftIndexes.length === variantBulk.rightIndexes.length;
-      const compatible = equalCount && variantBulk.leftIndexes.every((leftIndex, pairIndex) => {
-        const rightIndex = variantBulk!.rightIndexes[pairIndex];
-        return isOrdinaryLyric(song.blocks[leftIndex]) && isOrdinaryLyric(song.blocks[rightIndex]) &&
-          compareLyricChordCompatibility(song.blocks[leftIndex] as never, song.blocks[rightIndex] as never).compatible;
+      const equalCount = variantBulk.leftIds.length > 0 && variantBulk.leftIds.length === variantBulk.rightIds.length;
+      const compatible = equalCount && variantBulk.leftIds.every((leftId, pairIndex) => {
+        const left = song.blocks.find((block) => block.id === leftId);
+        const right = song.blocks.find((block) => block.id === variantBulk!.rightIds[pairIndex]);
+        return isOrdinaryLyric(left) && isOrdinaryLyric(right) &&
+          compareLyricChordCompatibility(left as never, right as never).compatible;
       });
       confirm.disabled = !compatible;
       bulkActions.append(back, confirm);
@@ -508,7 +527,7 @@ function renderPreview(song: EditableSong) {
 function applySongEdit(song: EditableSong, rerenderEditor = true) {
   if (!draftCandidate || publishGuard.locked) return;
   variantCombine = undefined;
-  variantBulk = undefined;
+  // Bulk selection is keyed by block ID, so it remains safe if blocks move before confirmation.
   const edited = applyCandidateSongEdit(
     { candidate: draftCandidate, confirmed: Boolean(confirmation?.checked), duplicate: currentDuplicate },
     song,
@@ -744,7 +763,9 @@ manualForm?.addEventListener("submit", async (event) => {
   if (!manualForm.reportValidity()) return;
   manualButton.disabled = true;
   try {
-    const draft = createManualLyricDraft(fields, String(data.get("lyrics") ?? ""));
+    const lyrics = String(data.get("lyrics") ?? "");
+    const parsedLyrics = parseAnnotatedLyrics(lyrics);
+    const draft = createManualLyricDraft(fields, lyrics);
     clearCandidateWorkspace();
     isManualDraft = true;
     draftCandidate = draft;
@@ -756,20 +777,36 @@ manualForm?.addEventListener("submit", async (event) => {
     renderEditorValidation(validationPaths(draft));
     showDuplicate(currentDuplicate);
     manualStatus.className = "add-status is-success";
-    manualStatus.textContent = "歌词草稿已进入段落编辑。请补全每个级数和弦后再确认提交。";
+    const summary = parsedLyrics.summary;
+    manualStatus.textContent = `已解析：主歌 ${summary.verse} 行，副歌 ${summary.chorus} 行，Bridge ${summary.bridge} 行，A/B 配对 ${summary.variantPairs} 组，普通歌词块 ${summary.ordinaryBlocks} 个。请补全每个级数和弦后再确认提交。`;
   } catch (error) {
     manualStatus.className = "add-status is-error";
-    manualStatus.textContent = error instanceof Error && error.message === "manual_lyrics_required"
-      ? "请至少输入一行非空歌词。"
-      : "无法建立手动歌词草稿，请检查填写内容。";
+    if (error instanceof ManualLyricsParseError) {
+      const details = error.details;
+      manualStatus.textContent = `解析失败：${details.code}（第 ${details.line} 行${details.section_role ? `，${details.section_role}` : ""}${details.group ? `，${details.group}` : ""}）。`;
+    } else manualStatus.textContent = "无法建立手动歌词草稿，请检查填写内容。";
   } finally {
     manualButton.disabled = false;
     updatePublishState();
   }
 });
 
+document.querySelectorAll<HTMLButtonElement>("[data-manual-marker]").forEach((control) => {
+  control.addEventListener("click", () => {
+    if (!manualLyrics) return;
+    const marker = control.dataset.manualMarker ?? "";
+    const start = manualLyrics.selectionStart ?? manualLyrics.value.length;
+    const end = manualLyrics.selectionEnd ?? start;
+    if (start !== end && !window.confirm("插入标记将替换当前选中文本；是否继续？")) return;
+    const prefix = start > 0 && manualLyrics.value[start - 1] !== "\n" ? "\n" : "";
+    const suffix = end < manualLyrics.value.length && manualLyrics.value[end] !== "\n" ? "\n" : "";
+    manualLyrics.setRangeText(`${prefix}${marker}${suffix}`, start, end, "end");
+    manualLyrics.focus();
+  });
+});
+
 blockEditor?.addEventListener("input", (event) => {
-  if (!draftCandidate || !(event.target instanceof HTMLInputElement)) return;
+  if (!draftCandidate || !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) return;
   const input = event.target;
   const field = input.dataset.editorField;
   const blockIndex = Number(input.dataset.blockIndex);
@@ -808,12 +845,12 @@ blockEditor?.addEventListener("input", (event) => {
 
 blockEditor?.addEventListener("change", (event) => {
   if (!draftCandidate) return;
-  if (event.target instanceof HTMLInputElement && event.target.dataset.bulkVariantIndex && variantBulk) {
-    const index = Number(event.target.dataset.bulkVariantIndex);
-    const selected = variantBulk.phase === "left" ? variantBulk.leftIndexes : variantBulk.rightIndexes;
-    const other = variantBulk.phase === "left" ? variantBulk.rightIndexes : variantBulk.leftIndexes;
-    if (event.target.checked && !other.includes(index) && !selected.includes(index)) selected.push(index);
-    if (!event.target.checked) selected.splice(selected.indexOf(index), 1);
+  if (event.target instanceof HTMLInputElement && event.target.dataset.bulkVariantId && variantBulk) {
+    const id = event.target.dataset.bulkVariantId;
+    const selected = variantBulk.phase === "left" ? variantBulk.leftIds : variantBulk.rightIds;
+    const other = variantBulk.phase === "left" ? variantBulk.rightIds : variantBulk.leftIds;
+    if (event.target.checked && !other.includes(id) && !selected.includes(id)) selected.push(id);
+    if (!event.target.checked) selected.splice(selected.indexOf(id), 1);
     renderBlockEditor(draftCandidate.song);
     return;
   }
@@ -843,6 +880,7 @@ blockEditor?.addEventListener("click", (event) => {
   const action = target.dataset.editorAction;
   const blockIndex = Number(target.dataset.blockIndex);
   const phraseIndex = Number(target.dataset.phraseIndex);
+  const lyricSetIndex = Number(target.dataset.lyricSetIndex ?? 1);
   try {
     let song = draftCandidate.song;
     if (action === "move-up") song = moveBlock(song, blockIndex, -1);
@@ -870,7 +908,7 @@ blockEditor?.addEventListener("click", (event) => {
       }
     } else if (action === "split-phrase-at-cursor") {
       const row = target.closest(".phrase-editor-row");
-      const lyric = row?.querySelector<HTMLInputElement>('[data-editor-field="phrase-lyric"]');
+      const lyric = row?.querySelector<HTMLTextAreaElement>('[data-editor-field="phrase-lyric"]');
       const position = lyric?.selectionStart;
       if (position === null || position === undefined) throw new Error("请先把光标放在歌词拆分位置");
       song = splitLyricPhraseAt(song, blockIndex, phraseIndex, position);
@@ -886,10 +924,10 @@ blockEditor?.addEventListener("click", (event) => {
       song = swapLyricVariants(song, blockIndex);
     } else if (action === "remove-variant") {
       const block = song.blocks[blockIndex];
-      if (block?.type !== "lyric" || !block.lyric_sets?.[1]) throw new Error("lyric_variants_required");
-      const hasContent = block.lyric_sets[1].some((line) => line.length > 0);
-      if (hasContent && !window.confirm("删除 B 歌词会丢弃 B 的内容；是否确认继续？")) return;
-      song = removeLyricVariant(song, blockIndex);
+      if (block?.type !== "lyric" || !block.lyric_sets?.[lyricSetIndex]) throw new Error("lyric_variants_required");
+      const hasContent = block.lyric_sets[lyricSetIndex].some((line) => line.length > 0);
+      if (hasContent && !window.confirm("删除歌词组会丢弃其内容；是否确认继续？")) return;
+      song = removeLyricVariant(song, blockIndex, lyricSetIndex);
     } else if (action === "split-variants") {
       const block = song.blocks[blockIndex];
       if (block?.type !== "lyric" || !block.lyric_sets) throw new Error("lyric_variants_required");
@@ -914,7 +952,7 @@ blockEditor?.addEventListener("click", (event) => {
       song = combineLyricBlocksAsVariants(song, variantCombine.leftIndex, variantCombine.rightIndex);
       variantCombine = undefined;
     } else if (action === "bulk-next") {
-      if (!variantBulk?.leftIndexes.length) return;
+      if (!variantBulk?.leftIds.length) return;
       variantBulk.phase = "right";
       renderBlockEditor(song);
       return;
@@ -929,7 +967,7 @@ blockEditor?.addEventListener("click", (event) => {
       return;
     } else if (action === "bulk-confirm") {
       if (!variantBulk) return;
-      song = combineLyricRangesAsVariants(song, variantBulk.leftIndexes, variantBulk.rightIndexes);
+      song = combineLyricBlockIdsAsVariants(song, variantBulk.leftIds, variantBulk.rightIds);
       variantBulk = undefined;
     } else return;
     applySongEdit(song);
@@ -975,7 +1013,7 @@ document.querySelectorAll<HTMLButtonElement>("[data-editor-global-action]").forE
     const action = control.dataset.editorGlobalAction;
     if (action === "organize-variants") {
       variantCombine = undefined;
-      variantBulk = variantBulk ? undefined : { phase: "left", leftIndexes: [], rightIndexes: [] };
+      variantBulk = variantBulk ? undefined : { phase: "left", leftIds: [], rightIds: [] };
       renderBlockEditor(draftCandidate.song);
       return;
     }

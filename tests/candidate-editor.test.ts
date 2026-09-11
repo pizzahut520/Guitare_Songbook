@@ -4,6 +4,7 @@ import {
   addLyricBlock,
   addLyricPhrase,
   applyCandidateSongEdit,
+  combineLyricBlockIdsAsVariants,
   combineLyricBlocksAsVariants,
   combineLyricRangesAsVariants,
   compareLyricChordCompatibility,
@@ -298,6 +299,18 @@ describe("candidate structure editor pure operations", () => {
     expect(paired.blocks[0]).toMatchObject({ lyric_sets: [["  A 内部 空格", "A 第二句"], ["B 第一行", "B 第二句"]] });
     expect(paired.blocks[2]).toMatchObject({ lyric_sets: [["副歌 A 一", "副歌 A 二"], ["副歌 B 一", "副歌 B 二"]] });
     expect(SongSchema.safeParse(paired).success).toBe(true);
+  });
+
+  it("resolves bulk A/B selections by stable IDs at confirmation time and rejects duplicate selections atomically", () => {
+    const source = ordinaryLyricSong();
+    const moved = moveBlock(source, 2, -1);
+    const paired = combineLyricBlockIdsAsVariants(moved, ["verse-a", "chorus-a"], ["verse-b", "chorus-b"]);
+    expect(paired.blocks.find((block) => block.id === "verse-a")).toMatchObject({
+      lyric_sets: [["  A 内部 空格", "A 第二句"], ["B 第一行", "B 第二句"]],
+      chords: ["| 1   5 |", "6m  4"]
+    });
+    expect(() => combineLyricBlockIdsAsVariants(source, ["verse-a"], ["verse-a"])).toThrow("duplicate_selection");
+    expect(source.blocks.map((block) => block.id)).toContain("verse-b");
   });
 
   it("splits every lyric variant into unique ordinary blocks without losing content", () => {
