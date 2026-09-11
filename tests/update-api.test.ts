@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createWorker, type Env } from "../worker/index";
+import { GitHubProviderError } from "../worker/providers/github";
 import { SongSchema } from "../src/lib/song-schema";
 import { publishedSongToCandidate } from "../src/lib/published-song-edit";
 import { fictitiousSongCandidate } from "./fixtures/fictitious-song-candidate";
@@ -63,6 +64,35 @@ describe("safe published-song editing API", () => {
     expect(getSongRevision).toHaveBeenCalledWith(song.slug);
     expect(updateSong).not.toHaveBeenCalled();
     expect(createProvider).not.toHaveBeenCalled();
+  });
+
+  it("uses the read-specific message and safe diagnostics when revision loading fails", async () => {
+    const token = "test-only-github-token";
+    const providerError = new GitHubProviderError("github_upstream_error", "missing_content", {
+      stage: "missing_content",
+      upstream_status: 200,
+      github_request_id: "request-safe",
+      response_encoding: "base64",
+      sha_present: true,
+      content_present: false
+    });
+    const worker = createWorker({
+      verifyAccess: allowedAccess,
+      createGitHubProvider: () => ({
+        getSongRevision: vi.fn(async () => { throw providerError; }),
+        updateSong: vi.fn(), createSong: vi.fn(), checkRepositoryStatus: vi.fn()
+      })
+    });
+    const response = await worker.fetch(new Request(`${baseUrl}/api/songs/${song.slug}/edit`), env(), {});
+    const body = await response.text();
+
+    expect(response.status).toBe(502);
+    expect(body).toContain("无法从 GitHub 载入曲谱");
+    expect(body).not.toContain("GitHub 写入失败");
+    expect(body).toContain("missing_content");
+    expect(body).toContain("request-safe");
+    expect(body).not.toContain(token);
+    expect(body).not.toContain("本地参考");
   });
 
   it("updates with the edited full candidate but sends only candidate.song to GitHub", async () => {
