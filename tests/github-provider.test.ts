@@ -175,6 +175,87 @@ describe("GitHub Contents provider with mocked fetch", () => {
     expect(JSON.stringify(revision)).not.toContain("update-test-token");
   });
 
+  it.each([
+    ["malformed JSON", () => new Response("{", { status: 200, headers: { "content-type": "application/json", "x-github-request-id": "request-1" } }), "invalid_response_json"],
+    ["non-object JSON", () => response(200, null), "invalid_response_json"],
+    ["missing SHA", () => response(200, { encoding: "base64", content: encodeSong(song) }), "missing_sha"],
+    ["missing content", () => response(200, { sha: "abcdef1234567", encoding: "base64" }), "missing_content"],
+    ["unsupported encoding", () => response(200, { sha: "abcdef1234567", encoding: "utf-8", content: "{}" }), "unsupported_encoding"],
+    ["invalid base64", () => response(200, { sha: "abcdef1234567", encoding: "base64", content: "%%%" }), "base64_decode_failed"],
+    ["invalid decoded JSON", () => response(200, { sha: "abcdef1234567", encoding: "base64", content: btoa("{") }), "song_json_parse_failed"],
+    ["schema-invalid decoded song", () => response(200, { sha: "abcdef1234567", encoding: "base64", content: encodeSong({ ...song, blocks: [] }) }), "song_schema_failed"]
+  ])("returns safe revision diagnostics for %s", async (_label, createResponse, reason) => {
+    const token = "revision-test-token";
+    const privateLyrics = "不应泄露的歌词";
+    const fetchMock = vi.fn(async () => createResponse());
+    const provider = new GitHubContentsProvider(token, "owner/repo", "main", { fetch: fetchMock });
+
+    let caught: unknown;
+    try {
+      await provider.getSongRevision(song.slug);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toMatchObject({ code: "github_upstream_error", reason });
+    const serialized = JSON.stringify(caught);
+    expect(serialized).not.toContain(token);
+    expect(serialized).not.toContain(privateLyrics);
+    expect(serialized).not.toContain(JSON.stringify(song));
+  });
+
+  it.each([401, 403, 404, 409, 429, 500, 503])("maps revision HTTP %i without exposing response content", async (status) => {
+    const token = "revision-http-token";
+    const privateLyrics = "不应泄露的歌词";
+    const fetchMock = vi.fn(async () => Response.json(
+      { message: "private upstream detail", content: privateLyrics },
+      { status, headers: { "x-github-request-id": "safe-request-id" } }
+    ));
+    const provider = new GitHubContentsProvider(token, "owner/repo", "main", { fetch: fetchMock });
+    await expect(provider.getSongRevision(song.slug)).rejects.toMatchObject({
+      diagnostic: expect.objectContaining({ upstream_status: status, github_request_id: "safe-request-id" })
+    });
+    try {
+      await provider.getSongRevision(song.slug);
+    } catch (error) {
+      const serialized = JSON.stringify(error);
+      expect(serialized).not.toContain(token);
+      expect(serialized).not.toContain(privateLyrics);
+      expect(serialized).not.toContain("private upstream detail");
+    }
+  });
+
+  it("classifies a failed Contents request without retaining the fetch error", async () => {
+    const token = "revision-network-token";
+    const provider = new GitHubContentsProvider(token, "owner/repo", "main", {
+      fetch: vi.fn(async () => { throw new TypeError("private network detail"); })
+    });
+    let caught: unknown;
+    try {
+      await provider.getSongRevision(song.slug);
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toMatchObject({
+      code: "github_upstream_error", reason: "request_failed", diagnostic: { stage: "request_failed" }
+    });
+    expect(JSON.stringify(caught)).not.toContain(token);
+    expect(JSON.stringify(caught)).not.toContain("private network detail");
+  });
+
+  it("retains only safe Contents-response metadata", async () => {
+    const fetchMock = vi.fn(async () => Response.json({
+      sha: "abcdef1234567", encoding: "base64", message: "private detail"
+    }, { headers: { "x-github-request-id": "safe-request-id" } }));
+    const provider = new GitHubContentsProvider("test-token", "owner/repo", "main", { fetch: fetchMock });
+    await expect(provider.getSongRevision(song.slug)).rejects.toMatchObject({
+      reason: "missing_content",
+      diagnostic: {
+        stage: "missing_content", upstream_status: 200, github_request_id: "safe-request-id",
+        response_encoding: "base64", sha_present: true, content_present: false
+      }
+    });
+  });
+
   it("updates only the trusted slug path with the expected SHA", async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => response(200, {
       commit: {

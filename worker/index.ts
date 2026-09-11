@@ -28,6 +28,7 @@ import {
 import {
   GitHubContentsProvider,
   GitHubProviderError,
+  type GitHubErrorDiagnostic,
   type GitHubPublishResult,
   type GitHubRepositoryStatus,
   type GitHubSongRevision
@@ -37,6 +38,7 @@ const MAX_REQUEST_BODY_BYTES = 2_048;
 const MAX_PUBLISH_BODY_BYTES = 262_144;
 const DEFAULT_GITHUB_REPOSITORY = "pizzahut520/Guitare_Songbook";
 const DEFAULT_GITHUB_BRANCH = "main";
+const STATUS_CONTENT_SLUG = "song-dongye-anhe-qiao";
 
 export interface Fetcher {
   fetch(request: Request): Promise<Response>;
@@ -84,14 +86,27 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 interface SafeIssue { path: string; code: string }
 interface SafeExistingSong { title: string; artist: string; url: string }
+type SafeGitHubDiagnostic = Omit<GitHubErrorDiagnostic, "stage">;
 
 function errorResponse(
   status: number,
   code: string,
   message: string,
-  details: { reason?: string; issues?: SafeIssue[]; existing_song?: SafeExistingSong } = {}
+  details: {
+    reason?: string;
+    issues?: SafeIssue[];
+    existing_song?: SafeExistingSong;
+    diagnostic?: SafeGitHubDiagnostic;
+  } = {}
 ): Response {
   return jsonResponse({ error: { code, message, ...details } }, status);
+}
+
+function githubTarget(env: Env) {
+  return {
+    repository: env.GITHUB_REPOSITORY?.trim() || DEFAULT_GITHUB_REPOSITORY,
+    branch: env.GITHUB_BRANCH?.trim() || DEFAULT_GITHUB_BRANCH
+  };
 }
 
 function isJsonRequest(request: Request): boolean {
@@ -215,8 +230,7 @@ async function publishSong(
     });
   }
 
-  const repository = env.GITHUB_REPOSITORY?.trim() || DEFAULT_GITHUB_REPOSITORY;
-  const branch = env.GITHUB_BRANCH?.trim() || DEFAULT_GITHUB_BRANCH;
+  const { repository, branch } = githubTarget(env);
   try {
     const provider = dependencies.createGitHubProvider(githubToken, repository, branch);
     return jsonResponse(await provider.createSong(parsed.data.candidate.song), 201);
@@ -238,17 +252,18 @@ async function editableSong(
   if (!parsedSlug.success) return errorResponse(400, "invalid_request", "歌曲标识无效");
   const githubToken = env.GITHUB_TOKEN?.trim();
   if (!githubToken) return errorResponse(503, "github_not_configured", "GitHub 写入尚未配置");
-  const repository = env.GITHUB_REPOSITORY?.trim() || DEFAULT_GITHUB_REPOSITORY;
-  const branch = env.GITHUB_BRANCH?.trim() || DEFAULT_GITHUB_BRANCH;
+  const { repository, branch } = githubTarget(env);
   try {
     const provider = dependencies.createGitHubProvider(githubToken, repository, branch);
     if (!provider.getSongRevision) {
-      return errorResponse(502, "github_upstream_error", "无法读取当前歌曲版本");
+      return errorResponse(502, "github_upstream_error", "无法从 GitHub 载入曲谱");
     }
     const revision = await provider.getSongRevision(parsedSlug.data);
     const song = SongSchema.safeParse(revision.song);
     if (!song.success || song.data.slug !== parsedSlug.data) {
-      return errorResponse(502, "github_upstream_error", "当前歌曲文件无效");
+      return errorResponse(502, "github_upstream_error", "无法从 GitHub 载入曲谱", {
+        reason: "song_schema_failed"
+      });
     }
     const pageUrl = new URL(`/song/${parsedSlug.data}/`, request.url).toString();
     return jsonResponse({
@@ -256,8 +271,8 @@ async function editableSong(
       expected_sha: revision.sha
     });
   } catch (error) {
-    if (error instanceof GitHubProviderError) return githubErrorResponse(error);
-    return errorResponse(502, "github_upstream_error", "无法读取当前歌曲版本");
+    if (error instanceof GitHubProviderError) return githubErrorResponse(error, "read");
+    return errorResponse(502, "github_upstream_error", "无法从 GitHub 载入曲谱");
   }
 }
 
@@ -289,8 +304,7 @@ async function updateExistingSong(
       issues: [{ path: "candidate.song.slug", code: "custom" }]
     });
   }
-  const repository = env.GITHUB_REPOSITORY?.trim() || DEFAULT_GITHUB_REPOSITORY;
-  const branch = env.GITHUB_BRANCH?.trim() || DEFAULT_GITHUB_BRANCH;
+  const { repository, branch } = githubTarget(env);
   try {
     const provider = dependencies.createGitHubProvider(githubToken, repository, branch);
     if (!provider.getSongRevision || !provider.updateSong) {
@@ -322,7 +336,7 @@ async function updateExistingSong(
   }
 }
 
-function githubErrorResponse(error: GitHubProviderError): Response {
+function githubErrorResponse(error: GitHubProviderError, operation: "read" | "write" | "status" = "write"): Response {
   const status = error.code === "duplicate_song" || error.code === "github_conflict"
     ? 409
     : error.code === "github_rate_limited"
@@ -336,9 +350,14 @@ function githubErrorResponse(error: GitHubProviderError): Response {
         ? "GitHub 写入发生冲突"
         : error.code === "github_rate_limited"
           ? "GitHub API 请求受限"
-          : "GitHub 写入失败";
+        : operation === "read"
+          ? "无法从 GitHub 载入曲谱"
+          : operation === "status"
+            ? "GitHub 状态检查失败"
+            : "GitHub 写入失败";
   return errorResponse(status, error.code, message, {
-    ...(error.reason ? { reason: error.reason } : {})
+    ...(error.reason ? { reason: error.reason } : {}),
+    ...(error.diagnostic ? (({ stage: _stage, ...diagnostic }) => ({ diagnostic }))(error.diagnostic) : {})
   });
 }
 
@@ -348,14 +367,32 @@ async function githubStatus(env: Env, dependencies: WorkerDependencies): Promise
     return errorResponse(503, "github_not_configured", "GitHub 写入尚未配置");
   }
   try {
-    const provider = dependencies.createGitHubProvider(
-      githubToken,
-      DEFAULT_GITHUB_REPOSITORY,
-      DEFAULT_GITHUB_BRANCH
-    );
-    return jsonResponse(await provider.checkRepositoryStatus());
+    const { repository, branch } = githubTarget(env);
+    const provider = dependencies.createGitHubProvider(githubToken, repository, branch);
+    const status = await provider.checkRepositoryStatus();
+    let contentReadable = false;
+    let contentReadError: string | undefined;
+    if (!provider.getSongRevision) {
+      contentReadError = "request_failed";
+    } else {
+      try {
+        await provider.getSongRevision(STATUS_CONTENT_SLUG);
+        contentReadable = true;
+      } catch (error) {
+        contentReadError = error instanceof GitHubProviderError
+          ? error.reason ?? error.diagnostic?.stage ?? "request_failed"
+          : "request_failed";
+      }
+    }
+    return jsonResponse({
+      ...status,
+      content_readable: contentReadable,
+      effective_repository: repository,
+      effective_branch: branch,
+      ...(contentReadError ? { content_read_error: contentReadError } : {})
+    });
   } catch (error) {
-    if (error instanceof GitHubProviderError) return githubErrorResponse(error);
+    if (error instanceof GitHubProviderError) return githubErrorResponse(error, "status");
     return errorResponse(502, "github_upstream_error", "GitHub 状态检查失败");
   }
 }

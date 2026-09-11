@@ -158,7 +158,11 @@ describe("secure song publish API", () => {
       repository_accessible: true as const,
       push_permission: true
     }));
-    const createGitHubProvider = vi.fn(() => ({ createSong, checkRepositoryStatus }));
+    const getSongRevision = vi.fn(async () => ({
+      song: fictitiousSongCandidate.song,
+      sha: "abcdef1234567"
+    }));
+    const createGitHubProvider = vi.fn(() => ({ createSong, checkRepositoryStatus, getSongRevision }));
     const statusEnv = env();
     statusEnv.GITHUB_TOKEN = "  test-only-github-token  ";
 
@@ -175,9 +179,44 @@ describe("secure song publish API", () => {
       "main"
     );
     expect(checkRepositoryStatus).toHaveBeenCalledOnce();
+    expect(getSongRevision).toHaveBeenCalledWith("song-dongye-anhe-qiao");
     expect(createSong).not.toHaveBeenCalled();
     const body = JSON.stringify(await response.json());
     expect(body).toContain('"push_permission":true');
+    expect(body).toContain('"content_readable":true');
+    expect(body).toContain('"effective_repository":"pizzahut520/Guitare_Songbook"');
+    expect(body).toContain('"effective_branch":"main"');
+    expect(body).not.toContain("test-only-github-token");
+  });
+
+  it("uses configured repository and branch and reports a safe unreadable-content reason", async () => {
+    const statusEnv = env();
+    statusEnv.GITHUB_REPOSITORY = "owner/configured-repository";
+    statusEnv.GITHUB_BRANCH = "release";
+    const getSongRevision = vi.fn(async () => {
+      throw new (await import("../worker/providers/github")).GitHubProviderError(
+        "github_upstream_error", "unsupported_encoding"
+      );
+    });
+    const createGitHubProvider = vi.fn(() => ({
+      createSong: vi.fn(),
+      checkRepositoryStatus: vi.fn(async () => ({
+        status: "ok" as const, authenticated: true as const,
+        repository_accessible: true as const, push_permission: true
+      })),
+      getSongRevision
+    }));
+    const response = await createWorker({ verifyAccess: allowedAccess, createGitHubProvider }).fetch(
+      new Request(`${baseUrl}/api/github/status`), statusEnv, {}
+    );
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(createGitHubProvider).toHaveBeenCalledWith("test-only-github-token", "owner/configured-repository", "release");
+    expect(body).toContain('"content_readable":false');
+    expect(body).toContain('"content_read_error":"unsupported_encoding"');
+    expect(body).toContain('"effective_repository":"owner/configured-repository"');
+    expect(body).toContain('"effective_branch":"release"');
     expect(body).not.toContain("test-only-github-token");
   });
 

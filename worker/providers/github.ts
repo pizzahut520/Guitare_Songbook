@@ -1,4 +1,4 @@
-import type { Song } from "../../src/lib/song-schema";
+import { SongSchema, type Song } from "../../src/lib/song-schema";
 
 export type GitHubErrorCode =
   | "duplicate_song"
@@ -14,10 +14,36 @@ export type GitHubErrorReason =
   | "repository_not_found"
   | "branch_protected"
   | "rate_limited"
-  | "unknown_forbidden";
+  | "unknown_forbidden"
+  | GitHubDiagnosticStage;
+
+export type GitHubDiagnosticStage =
+  | "request_failed"
+  | "unexpected_http_status"
+  | "invalid_response_json"
+  | "missing_sha"
+  | "missing_content"
+  | "unsupported_encoding"
+  | "base64_decode_failed"
+  | "song_json_parse_failed"
+  | "song_schema_failed";
+
+export interface GitHubErrorDiagnostic {
+  stage: GitHubDiagnosticStage;
+  upstream_status?: number;
+  github_request_id?: string;
+  response_encoding?: "base64" | "missing" | "other";
+  sha_present?: boolean;
+  content_present?: boolean;
+  content_character_count?: number;
+}
 
 export class GitHubProviderError extends Error {
-  constructor(readonly code: GitHubErrorCode, readonly reason?: GitHubErrorReason) {
+  constructor(
+    readonly code: GitHubErrorCode,
+    readonly reason?: GitHubErrorReason,
+    readonly diagnostic?: GitHubErrorDiagnostic
+  ) {
     super(code);
     this.name = "GitHubProviderError";
   }
@@ -55,7 +81,32 @@ function base64Utf8(value: string): string {
 
 function decodeBase64Utf8(value: string): string {
   const binary = atob(value.replace(/\s+/g, ""));
-  return new TextDecoder().decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
+  return new TextDecoder("utf-8", { fatal: true })
+    .decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
+}
+
+function requestId(response: Response): string | undefined {
+  const value = response.headers.get("x-github-request-id");
+  return value && /^[a-zA-Z0-9:_-]{1,200}$/.test(value) ? value : undefined;
+}
+
+function responseDiagnostic(
+  response: Response,
+  stage: GitHubDiagnosticStage,
+  payload?: { sha?: unknown; content?: unknown; encoding?: unknown }
+): GitHubErrorDiagnostic {
+  const encoding = payload?.encoding;
+  return {
+    stage,
+    ...(response.status ? { upstream_status: response.status } : {}),
+    ...(requestId(response) ? { github_request_id: requestId(response) } : {}),
+    ...(payload ? {
+      response_encoding: encoding === "base64" ? "base64" : encoding === undefined ? "missing" : "other",
+      sha_present: typeof payload.sha === "string",
+      content_present: typeof payload.content === "string",
+      ...(typeof payload.content === "string" ? { content_character_count: payload.content.length } : {})
+    } : {})
+  };
 }
 
 async function standardErrorMessage(response: Response): Promise<string | undefined> {
@@ -68,38 +119,39 @@ async function standardErrorMessage(response: Response): Promise<string | undefi
 }
 
 async function mappedError(response: Response): Promise<GitHubProviderError> {
+  const diagnostic = responseDiagnostic(response, "unexpected_http_status");
   if (response.status === 401) {
-    return new GitHubProviderError("github_auth_failed", "bad_credentials");
+    return new GitHubProviderError("github_auth_failed", "bad_credentials", diagnostic);
   }
   if (response.status === 403) {
     const message = await standardErrorMessage(response);
     if (response.headers.get("x-ratelimit-remaining") === "0" || message?.includes("rate limit")) {
-      return new GitHubProviderError("github_rate_limited", "rate_limited");
+      return new GitHubProviderError("github_rate_limited", "rate_limited", diagnostic);
     }
     if (message?.includes("user agent required")) {
-      return new GitHubProviderError("github_auth_failed", "user_agent_required");
+      return new GitHubProviderError("github_auth_failed", "user_agent_required", diagnostic);
     }
     if (message?.includes("protected branch")) {
-      return new GitHubProviderError("github_conflict", "branch_protected");
+      return new GitHubProviderError("github_conflict", "branch_protected", diagnostic);
     }
     if (
       message?.includes("resource not accessible") ||
       message?.includes("must have push access") ||
       message?.includes("insufficient permission")
     ) {
-      return new GitHubProviderError("github_auth_failed", "insufficient_permissions");
+      return new GitHubProviderError("github_auth_failed", "insufficient_permissions", diagnostic);
     }
-    return new GitHubProviderError("github_auth_failed", "unknown_forbidden");
+    return new GitHubProviderError("github_auth_failed", "unknown_forbidden", diagnostic);
   }
-  if (response.status === 409) return new GitHubProviderError("github_conflict");
-  if (response.status === 422) return new GitHubProviderError("duplicate_song");
+  if (response.status === 409) return new GitHubProviderError("github_conflict", undefined, diagnostic);
+  if (response.status === 422) return new GitHubProviderError("duplicate_song", undefined, diagnostic);
   if (response.status === 429) {
-    return new GitHubProviderError("github_rate_limited", "rate_limited");
+    return new GitHubProviderError("github_rate_limited", "rate_limited", diagnostic);
   }
   if (response.status === 404) {
-    return new GitHubProviderError("github_auth_failed", "repository_not_found");
+    return new GitHubProviderError("github_auth_failed", "repository_not_found", diagnostic);
   }
-  return new GitHubProviderError("github_upstream_error");
+  return new GitHubProviderError("github_upstream_error", "unexpected_http_status", diagnostic);
 }
 
 export class GitHubContentsProvider {
@@ -149,26 +201,50 @@ export class GitHubContentsProvider {
         headers: this.standardHeaders()
       });
     } catch {
-      throw new GitHubProviderError("github_upstream_error");
+      throw new GitHubProviderError("github_upstream_error", "request_failed", { stage: "request_failed" });
     }
     if (!response.ok) throw await mappedError(response);
-    let payload: { sha?: unknown; content?: unknown; encoding?: unknown };
+    let payload: unknown;
     try {
-      payload = await response.json() as typeof payload;
+      payload = await response.json();
     } catch {
-      throw new GitHubProviderError("github_upstream_error");
+      throw new GitHubProviderError(
+        "github_upstream_error", "invalid_response_json", responseDiagnostic(response, "invalid_response_json")
+      );
     }
-    if (
-      typeof payload.sha !== "string" || !/^[a-f0-9]{7,64}$/i.test(payload.sha) ||
-      payload.encoding !== "base64" || typeof payload.content !== "string"
-    ) {
-      throw new GitHubProviderError("github_upstream_error");
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      throw new GitHubProviderError(
+        "github_upstream_error", "invalid_response_json", responseDiagnostic(response, "invalid_response_json")
+      );
     }
+    const contents = payload as { sha?: unknown; content?: unknown; encoding?: unknown };
+    const diagnostic = (stage: GitHubDiagnosticStage) => responseDiagnostic(response, stage, contents);
+    if (typeof contents.sha !== "string" || !/^[a-f0-9]{7,64}$/i.test(contents.sha)) {
+      throw new GitHubProviderError("github_upstream_error", "missing_sha", diagnostic("missing_sha"));
+    }
+    if (typeof contents.content !== "string") {
+      throw new GitHubProviderError("github_upstream_error", "missing_content", diagnostic("missing_content"));
+    }
+    if (contents.encoding !== "base64") {
+      throw new GitHubProviderError("github_upstream_error", "unsupported_encoding", diagnostic("unsupported_encoding"));
+    }
+    let decoded: string;
     try {
-      return { sha: payload.sha, song: JSON.parse(decodeBase64Utf8(payload.content)) };
+      decoded = decodeBase64Utf8(contents.content);
     } catch {
-      throw new GitHubProviderError("github_upstream_error");
+      throw new GitHubProviderError("github_upstream_error", "base64_decode_failed", diagnostic("base64_decode_failed"));
     }
+    let decodedSong: unknown;
+    try {
+      decodedSong = JSON.parse(decoded);
+    } catch {
+      throw new GitHubProviderError("github_upstream_error", "song_json_parse_failed", diagnostic("song_json_parse_failed"));
+    }
+    const song = SongSchema.safeParse(decodedSong);
+    if (!song.success) {
+      throw new GitHubProviderError("github_upstream_error", "song_schema_failed", diagnostic("song_schema_failed"));
+    }
+    return { sha: contents.sha, song: song.data };
   }
 
   async checkRepositoryStatus(): Promise<GitHubRepositoryStatus> {
