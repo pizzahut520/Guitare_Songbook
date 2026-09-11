@@ -165,7 +165,11 @@ export class GitHubContentsProvider {
     options: GitHubProviderOptions = {}
   ) {
     this.token = token.trim();
-    this.fetchImplementation = options.fetch ?? fetch;
+    const fetchImplementation = options.fetch ?? globalThis.fetch;
+    // Cloudflare's native fetch validates its receiver. Keep injected fetches
+    // injectable, but always invoke the captured function without a provider
+    // instance receiver.
+    this.fetchImplementation = (input, init) => fetchImplementation(input, init);
   }
 
   private standardHeaders() {
