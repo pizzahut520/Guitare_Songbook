@@ -34,11 +34,21 @@
       "id": "1-02",
       "type": "lyric",
       "chords": [
-        "1   5   6m"
+        "1          5         6m"
       ],
-      "lyrics": [
-        "让我再看你一遍 从南到北"
+      "lyric_sets": [
+        [
+          "让我再看你一遍 从南到北"
+        ],
+        [
+          "让我再  尝一口 秋天的酒"
+        ]
       ],
+      "variant_labels": [
+        "A.",
+        "B."
+      ],
+      "section_role": "verse",
       "spacing": "normal"
     },
     {
@@ -47,8 +57,17 @@
       "chords": [
         "4   5   1"
       ],
-      "lyrics": [
-        "像是被五环路 蒙住的双眼"
+      "lyric_sets": [
+        [
+          "像是被五环路 蒙住的双眼"
+        ],
+        [
+          "一直往南方开 不会太久"
+        ]
+      ],
+      "variant_labels": [
+        "A.",
+        "B."
       ],
       "spacing": "normal"
     },
@@ -58,8 +77,17 @@
       "chords": [
         "1   5   6m"
       ],
-      "lyrics": [
-        "请你再讲一遍 关于那天"
+      "lyric_sets": [
+        [
+          "请你再讲一遍 关于那天"
+        ],
+        [
+          "让我再听一遍 最美的那一句"
+        ]
+      ],
+      "variant_labels": [
+        "A.",
+        "B."
       ],
       "spacing": "normal"
     },
@@ -69,8 +97,17 @@
       "chords": [
         "4   5   6m"
       ],
-      "lyrics": [
-        "抱着盒子的姑娘 和擦汗的男人"
+      "lyric_sets": [
+        [
+          "抱着盒子的姑娘 和擦汗的男人"
+        ],
+        [
+          "你回家了 我在等你呢"
+        ]
+      ],
+      "variant_labels": [
+        "A.",
+        "B."
       ],
       "spacing": "normal"
     },
@@ -80,9 +117,19 @@
       "chords": [
         "4maj7   5"
       ],
-      "lyrics": [
-        "我知道 那些夏天"
+      "lyric_sets": [
+        [
+          "我知道 那些夏天"
+        ],
+        [
+          "我知道 吹过的牛逼"
+        ]
       ],
+      "variant_labels": [
+        "A.",
+        "B."
+      ],
+      "section_role": "chorus",
       "spacing": "normal"
     },
     {
@@ -91,8 +138,17 @@
       "chords": [
         "6m   5"
       ],
-      "lyrics": [
-        "就像青春一样回不来"
+      "lyric_sets": [
+        [
+          "就像青春一样回不来"
+        ],
+        [
+          "也会随青春一笑了之"
+        ]
+      ],
+      "variant_labels": [
+        "A.",
+        "B."
       ],
       "spacing": "normal"
     },
@@ -108,195 +164,11 @@
       "spacing": "normal"
     },
     {
-      "id": "1-09",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5"
-      ],
-      "lyrics": [
-        "我知道 吹过的牛逼"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "1-10",
-      "type": "lyric",
-      "chords": [
-        "6m   5"
-      ],
-      "lyrics": [
-        "也会随青春一笑了之"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "1-11",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5   6m"
-      ],
-      "lyrics": [
-        "让我困在城市里 纪念你"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-12",
-      "type": "lyric",
-      "chords": [
-        "1   5   6m"
-      ],
-      "lyrics": [
-        "让我再尝一口 秋天的酒"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-13",
-      "type": "lyric",
-      "chords": [
-        "4   5   1"
-      ],
-      "lyrics": [
-        "一直往南方开 不会太久"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-14",
-      "type": "lyric",
-      "chords": [
-        "1   5   6m"
-      ],
-      "lyrics": [
-        "让我再听一遍 最美的那一句"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "2-15",
-      "type": "lyric",
-      "chords": [
-        "4   5   6m"
-      ],
-      "lyrics": [
-        "你回家了 我在等你呢"
-      ],
-      "spacing": "normal"
-    },
-    {
-      "id": "section-16",
-      "type": "instrument",
-      "label": "间奏",
-      "progression": "4maj7   5   6m   5   4maj7   5   1   5 | 4   5   6m   5   4   5   1   5"
-    },
-    {
-      "id": "2-17",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5"
-      ],
-      "spacing": "compact",
-      "lyric_sets": [
-        [
-          "我知道 那些夏天"
-        ],
-        [
-          "我知道 那些夏天"
-        ]
-      ],
-      "variant_labels": [
-        "A.",
-        "B."
-      ]
-    },
-    {
-      "id": "2-18",
-      "type": "lyric",
-      "chords": [
-        "6m   5"
-      ],
-      "spacing": "compact",
-      "lyric_sets": [
-        [
-          "就像青春一样回不来"
-        ],
-        [
-          "就像你一样回不来"
-        ]
-      ],
-      "variant_labels": [
-        "A.",
-        "B."
-      ]
-    },
-    {
-      "id": "2-19",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5   1"
-      ],
-      "spacing": "compact",
-      "lyric_sets": [
-        [
-          "代替梦想的也只能是勉为其难"
-        ],
-        [
-          "我也不会再对谁满怀期待"
-        ]
-      ],
-      "variant_labels": [
-        "A.",
-        "B."
-      ]
-    },
-    {
-      "id": "2-20",
-      "type": "lyric",
-      "chords": [
-        "4maj7   5"
-      ],
-      "spacing": "compact",
-      "lyric_sets": [
-        [
-          "我知道 吹过的牛逼"
-        ],
-        [
-          "我知道 这个世界"
-        ]
-      ],
-      "variant_labels": [
-        "A.",
-        "B."
-      ]
-    },
-    {
-      "id": "2-21",
-      "type": "lyric",
-      "chords": [
-        "6m   5"
-      ],
-      "spacing": "compact",
-      "lyric_sets": [
-        [
-          "也会随青春一笑了之"
-        ],
-        [
-          "每天都有太多遗憾"
-        ]
-      ],
-      "variant_labels": [
-        "A.",
-        "B."
-      ]
-    },
-    {
       "id": "2-22",
       "type": "lyric",
       "chords": [
         "4maj7   5   6m"
       ],
-      "spacing": "compact",
       "lyric_sets": [
         [
           "让我困在城市里 纪念你"
@@ -308,7 +180,14 @@
       "variant_labels": [
         "A.",
         "B."
-      ]
+      ],
+      "spacing": "compact"
+    },
+    {
+      "id": "section-16",
+      "type": "instrument",
+      "label": "间奏",
+      "progression": "4maj7   5   6m   5   4maj7   5   1   5 | 4   5   6m   5   4   5   1   5"
     },
     {
       "id": "section-29",
